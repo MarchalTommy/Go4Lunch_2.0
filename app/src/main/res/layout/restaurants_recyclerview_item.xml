@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp">
+
+    <TextView
+        android:id="@+id/restaurantName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="Le Zinc"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.165" />
+
+    <TextView
+        android:id="@+id/restaurantAddress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="24 rue du Faubourg Poissonnière"
+        android:textColor="#525252"
+        app:layout_constraintBottom_toTopOf="@id/restaurantTime"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/restaurantName" />
+
+    <TextView
+        android:id="@+id/restaurantTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="Open until 7pm"
+        android:textColor="#525252"
+        app:layout_constraintBottom_toBottomOf="@id/restaurantPic"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
+
+    <ImageView
+        android:id="@+id/restaurantPic"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:padding="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:contentDescription="No pictures were found." />
+
+    <TextView
+        android:id="@+id/restaurantDistance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="348m"
+        android:textColor="#A1A1A1"
+        app:layout_constraintEnd_toStartOf="@id/restaurantPic"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@drawable/ic_person_outline"
+        app:tint="@android:color/black"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/numberOfWorkmatesEatingHere"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/numberOfWorkmatesEatingHere"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="(3)"
+        android:textColor="@color/black"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/restaurantPic"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatRatingBar
+        android:id="@+id/restaurantRatingBar"
+        style="@style/Widget.AppCompat.RatingBar.Indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:isIndicator="true"
+        android:numStars="3"
+        android:progressTint="@color/primaryLightColor"
+        android:rating="2"
+        android:scaleX="0.6"
+        android:scaleY="0.6"
+        android:secondaryProgressTint="@color/primaryLightColor"
+        android:transformPivotX="114dp"
+        android:transformPivotY="34dp"
+        app:layout_constraintBottom_toBottomOf="@id/restaurantPic"
+        app:layout_constraintEnd_toEndOf="@+id/numberOfWorkmatesEatingHere" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

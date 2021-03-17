@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Go4Lunch V2</string>
+    <string name="subtitle">Find a nice restaurant and invite your co-workers for lunch!</string>
+    <string name="title">Go4Lunch</string>
+
+
+    <string name="facebook_app_id">513842192939193</string> <string name="fb_login_protocol_scheme">fb513842192939193</string>
+    <string name="facebook_application_id" translatable="false">513842192939193</string>
+    <string name="facebook_login_protocol_scheme" translatable="false">fb513842192939193</string>
+    <string name="login">Login</string>
+    <string name="welcome_back">Welcome back !</string>
+    <string name="error_unknown_error">An unknown error occurred…</string>
+    <string name="auth_canceled">The authentication got canceled…</string>
+    <string name="error_no_internet">No network connection…</string>
+    <string name="lunch">YOUR LUNCH</string>
+    <string name="settings">SETTINGS</string>
+    <string name="logout">LOGOUT</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="search">Search</string>
+    <string name="map_view">Map View</string>
+    <string name="list_view">List View</string>
+    <string name="workmates">WorkMates</string>
+</resources>

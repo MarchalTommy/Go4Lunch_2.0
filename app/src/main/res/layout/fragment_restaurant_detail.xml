@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".UI.DetailFragment"
+    android:background="@color/primaryColor">
+
+    <ImageView
+        android:id="@+id/restaurantDetailPic"
+        android:layout_width="match_parent"
+        android:layout_height="254dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/background"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/detail_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleX="1.25"
+        android:scaleY="1.25"
+        android:src="@drawable/ic_check"
+        app:backgroundTint="@android:color/white"
+        app:layout_constraintBottom_toTopOf="@+id/cardView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.93"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.74"
+        app:maxImageSize="36dp" />
+
+    <TextView
+        android:id="@+id/restaurantDetailName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:ellipsize="end"
+        android:maxWidth="230dp"
+        android:maxLines="1"
+        android:textColor="@color/white"
+        android:textSize="24sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/restaurantDetailPic"
+        tools:text="Le Zinc" />
+
+    <RatingBar
+        android:id="@+id/detailRatingBar"
+        style="@style/Widget.AppCompat.RatingBar.Indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:isIndicator="true"
+        android:numStars="3"
+        android:progressTint="#F8E71C"
+        android:scaleX="0.8"
+        android:scaleY="0.8"
+        android:secondaryProgressTint="#F8E71C"
+        android:transformPivotY="25dp"
+        app:layout_constraintBottom_toBottomOf="@id/restaurantDetailName"
+        app:layout_constraintStart_toEndOf="@id/restaurantDetailName" />
+
+    <TextView
+        android:id="@+id/restaurantDetailAddress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="@id/restaurantDetailName"
+        app:layout_constraintTop_toBottomOf="@id/restaurantDetailName"
+        tools:text="12 rue du Faubourg Poissonnière" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cardView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="32dp"
+        android:background="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/restaurantDetailAddress">
+
+        <LinearLayout
+            android:id="@+id/linear_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/call_btn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="8dp"
+                android:layout_weight="1"
+                android:drawablePadding="8dp"
+                android:drawableTint="@color/primaryColor"
+                android:gravity="center"
+                android:text="Call"
+                android:textAllCaps="true"
+                android:textColor="@color/primaryColor"
+                android:textSize="20sp"
+                app:drawableTopCompat="@drawable/ic_call" />
+
+            <TextView
+                android:id="@+id/like_btn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="8dp"
+                android:layout_weight="1"
+                android:drawablePadding="8dp"
+                android:drawableTint="@color/primaryColor"
+                android:gravity="center"
+                android:text="Like"
+                android:textAllCaps="true"
+                android:textColor="@color/primaryColor"
+                android:textSize="20sp"
+                app:drawableTopCompat="@drawable/ic_like" />
+
+            <TextView
+                android:id="@+id/website_btn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="8dp"
+                android:layout_weight="1"
+                android:drawablePadding="8dp"
+                android:drawableTint="@color/primaryColor"
+                android:gravity="center"
+                android:text="Website"
+                android:textAllCaps="true"
+                android:textColor="@color/primaryColor"
+                android:textSize="20sp"
+                app:drawableTopCompat="@drawable/ic_website" />
+
+        </LinearLayout>
+
+        <View
+            android:id="@+id/divider"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/cardview_shadow_start_color"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/linear_layout" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/detail_recyclerview"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/divider"
+            tools:listitem="@layout/detail_recyclerview_item" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
