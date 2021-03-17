@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DetailFragment extends Fragment {
-
     Context context;
     SharedViewModel sharedViewModel;
     UserViewModel userViewModel;
