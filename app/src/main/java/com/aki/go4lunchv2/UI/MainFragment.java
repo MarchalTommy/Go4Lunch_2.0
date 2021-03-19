@@ -54,14 +54,14 @@ public class MainFragment extends Fragment{
     private Toolbar toolbar;
 
     // Listeners
-    private BottomNavigationView.OnNavigationItemSelectedListener bottomNavListener =
+    private final BottomNavigationView.OnNavigationItemSelectedListener bottomNavListener =
             item -> {
                 Fragment selectedFragment = null;
 
                 switch (item.getItemId()) {
                     case R.id.nav_map:
                         FRAGMENT_SELECTED = 1;
-                        //selectedFragment = new MapsFragment();
+                        selectedFragment = new MapFragment();
                         break;
                     case R.id.nav_list:
                         FRAGMENT_SELECTED = 2;
@@ -77,7 +77,7 @@ public class MainFragment extends Fragment{
 
                 return true;
             };
-    private NavigationView.OnNavigationItemSelectedListener drawerListener =
+    private final NavigationView.OnNavigationItemSelectedListener drawerListener =
             item -> {
                 Fragment selectedFragment = null;
                 switch (item.getItemId()) {
@@ -116,7 +116,7 @@ public class MainFragment extends Fragment{
 
         updateUi();
 
-//        getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container_main, new MapsFragment()).commit();
+        getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container_main, new MapFragment()).commit();
     }
 
     public void updateUi() {
