@@ -16,8 +16,6 @@ public class SharedViewModel extends ViewModel {
 
     private MutableLiveData<Result> restaurant = new MutableLiveData<>();
 
-    private MutableLiveData<LatLng> searchLocation = new MutableLiveData<>();
-
     //RESTAURANT
     public void setRestaurant(Result input) {
         restaurant.setValue(input);
@@ -43,14 +41,5 @@ public class SharedViewModel extends ViewModel {
 
     public LiveData<LatLng> getUserLocation() {
         return userLocation;
-    }
-
-    //Search MAPS LOCATION
-    public void setSearchLocation(LatLng location) {
-        searchLocation.setValue(location);
-    }
-
-    public LiveData<LatLng> getSearchLocation() {
-        return searchLocation;
     }
 }

@@ -60,7 +60,7 @@ public class LoginFragment extends Fragment {
         // Checking if the user is already logged in.
         // If not, logging screen, else, navigate to main screen.
         if (userViewModel.getCurrentFirebaseUser() != null) {
-            navController.navigate(R.id.action_loginFragment_to_mainFragment);
+            navController.navigate(R.id.action_loginFragment_to_mapFragment);
         } else {
             startSignInActivity();
         }
@@ -92,8 +92,7 @@ public class LoginFragment extends Fragment {
         if (requestCode == AUTH_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 userViewModel.createCurrentUserInFirestore();
-                navController.navigate(R.id.action_loginFragment_to_mainFragment);
-                sharedViewModel.setCurrentUser(userViewModel.getCurrentUserPOJO());
+                navController.navigate(R.id.action_loginFragment_to_mapFragment);
             } else {
                 if (response == null) {
                     showSnackBar(this.getView(), getString(R.string.auth_canceled));

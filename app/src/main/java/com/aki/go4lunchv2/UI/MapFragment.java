@@ -26,6 +26,7 @@ import androidx.navigation.Navigation;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentMapBinding;
+import com.aki.go4lunchv2.events.FromSearchToMap;
 import com.aki.go4lunchv2.models.Result;
 import com.aki.go4lunchv2.viewmodels.RestaurantViewModel;
 import com.aki.go4lunchv2.viewmodels.SharedViewModel;
@@ -47,6 +48,9 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
 
 import static android.content.ContentValues.TAG;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
@@ -106,10 +110,6 @@ public class MapFragment extends Fragment {
                 googleMap.clear();
                 gMap = googleMap;
 
-                sharedViewModel.getSearchLocation().observe(getViewLifecycleOwner(), latLng ->{
-                            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 19));
-                        });
-
                 restaurantViewModel.getRestaurantsAround(stringLocation, getContext())
                         .observe(getViewLifecycleOwner(), results -> {
                             googleMap.clear();
@@ -131,7 +131,7 @@ public class MapFragment extends Fragment {
                 googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                     @Override
                     public boolean onMarkerClick(Marker marker) {
-                        navController.navigate(R.id.action_mainFragment_to_detailFragment);
+                        //navController.navigate(R.id.action_mainFragment_to_detailFragment);
                         return false;
                     }
                 });
@@ -151,6 +151,23 @@ public class MapFragment extends Fragment {
         gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        EventBus.getDefault().unregister(this);
+    }
+
+    //EVENT TO GET THE SEARCHED RESTAURANT FROM THE AUTOCOMPLETE IN THE ACTIVITY
+    @Subscribe
+    public void onRestaurantSearch(FromSearchToMap event){
+        gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(event.place.getLatLng(), 19));
+    }
 
     //-----------------------------------------
     //LOCATION PERMISSION

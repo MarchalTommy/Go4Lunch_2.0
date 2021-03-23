@@ -105,6 +105,6 @@ public class ListFragment extends Fragment {
     public void onGettingDetail(FromListToDetailEvent event) {
         Log.d(TAG, "onGettingDetail: Event called successfully : \nRestaurant name : " + event.result.getName());
         viewModel.setRestaurant(event.result);
-        navController.navigate(R.id.action_mainFragment_to_detailFragment);
+        navController.navigate(R.id.action_listFragment_to_detailFragment);
     }
 }
