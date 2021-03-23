@@ -25,12 +25,6 @@ public class RestaurantRepository {
     private ArrayList<Result> restaurantsAround = new ArrayList<>();
     private MutableLiveData<ArrayList<Result>> resultLiveData = new MutableLiveData<>();
 
-    public void initPlaces(Context context) {
-        Places.initialize(context, context.getResources().getString(R.string.GOOGLE_MAPS_API_KEY));
-        PlacesClient placesClient = Places.createClient(context);
-    }
-
-    //TODO : tests to check the form (not sure about the callback nor the MutableLiveData use)
     public MutableLiveData<ArrayList<Result>> fetchRestaurantsAround(String location, Context context) {
         RestaurantCalls.fetchRestaurantsAround(new RestaurantCalls.Callbacks() {
             @Override

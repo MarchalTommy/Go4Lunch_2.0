@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -19,8 +20,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentMapBinding;
@@ -39,13 +41,12 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
-
-import java.util.ArrayList;
 
 import static android.content.ContentValues.TAG;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
@@ -58,6 +59,7 @@ public class MapFragment extends Fragment {
     FragmentMapBinding mapBinding;
     SupportMapFragment supportMapFragment;
     FusedLocationProviderClient client;
+    NavController navController;
 
     LatLng latLng;
     String stringLocation = new String();
@@ -87,36 +89,50 @@ public class MapFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        navController = Navigation.findNavController(view);
         mapBinding = FragmentMapBinding.bind(view);
         getPermissions();
         initMap();
     }
 
     public void initMap() {
-        //Async map
         supportMapFragment.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(GoogleMap googleMap) {
                 //When map is loaded
-                BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.ic_restaurant_marker);
+                BitmapDescriptor iconBasic = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
+                Bitmap bitmap;
+                BitmapDescriptor iconLunchHere = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
                 googleMap.clear();
-                //Animating to zoom the marker
                 gMap = googleMap;
 
-                restaurantViewModel.getRestaurantsAround(stringLocation, getContext()).observe(getViewLifecycleOwner(), new Observer<ArrayList<Result>>() {
+                sharedViewModel.getSearchLocation().observe(getViewLifecycleOwner(), latLng ->{
+                            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 19));
+                        });
+
+                restaurantViewModel.getRestaurantsAround(stringLocation, getContext())
+                        .observe(getViewLifecycleOwner(), results -> {
+                            googleMap.clear();
+                            for (Result r : results) {
+
+                                LatLng restaurantLocation = new LatLng(
+                                        r.getGeometry().getLocation().getLat(),
+                                        r.getGeometry().getLocation().getLng());
+
+                                MarkerOptions markerOptions = new MarkerOptions();
+                                markerOptions.icon(iconBasic);
+                                markerOptions.title(r.getName());
+                                markerOptions.position(restaurantLocation);
+
+                                googleMap.addMarker(markerOptions);
+                            }
+                        });
+
+                googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                     @Override
-                    public void onChanged(ArrayList<Result> results) {
-                        googleMap.clear();
-                        for (Result r : results) {
-                            LatLng restaurantLocation = new LatLng(r.getGeometry().getLocation().getLat(), r.getGeometry().getLocation().getLng());
-
-                            MarkerOptions markerOptions = new MarkerOptions();
-                            markerOptions.icon(icon);
-                            markerOptions.title(r.getName());
-                            markerOptions.position(restaurantLocation);
-
-                            googleMap.addMarker(markerOptions);
-                        }
+                    public boolean onMarkerClick(Marker marker) {
+                        navController.navigate(R.id.action_mainFragment_to_detailFragment);
+                        return false;
                     }
                 });
             }
@@ -134,6 +150,7 @@ public class MapFragment extends Fragment {
         //For the map
         gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
     }
+
 
     //-----------------------------------------
     //LOCATION PERMISSION

@@ -16,14 +16,8 @@ public class RestaurantViewModel extends ViewModel {
     //REPOSITORY
     private RestaurantRepository placeRepository;
 
-
     public RestaurantViewModel() {
         placeRepository = new RestaurantRepository();
-    }
-
-    //INITIALIZING
-    public void initPlace(Context context) {
-        placeRepository.initPlaces(context);
     }
 
     //GETTING DATA

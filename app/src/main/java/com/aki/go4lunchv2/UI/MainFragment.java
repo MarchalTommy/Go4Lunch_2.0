@@ -2,8 +2,11 @@ package com.aki.go4lunchv2.UI;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem.OnMenuItemClickListener;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -22,27 +25,39 @@ import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentMainBinding;
 import com.aki.go4lunchv2.databinding.NavHeaderBinding;
 import com.aki.go4lunchv2.databinding.SettingsDialogBinding;
+import com.aki.go4lunchv2.viewmodels.SharedViewModel;
 import com.aki.go4lunchv2.viewmodels.UserViewModel;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.firebase.ui.auth.AuthUI;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.model.RectangularBounds;
+import com.google.android.libraries.places.api.model.TypeFilter;
+import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.libraries.places.widget.Autocomplete;
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
-public class MainFragment extends Fragment{
+import java.util.Arrays;
+import java.util.List;
+
+import static android.app.Activity.RESULT_OK;
+import static android.content.ContentValues.TAG;
+
+public class MainFragment extends Fragment {
 
     //TODO : Gérer la map et places
     //TODO : Gérer YourLunch et les favoris
     //TODO : Gérer searchbar with autocomplete
     //TODO : Enquêter sur le bug de déconnexion
 
-    public static int FRAGMENT_SELECTED = 0;
-
     NavController navController;
-
     UserViewModel userViewModel;
+    SharedViewModel sharedViewModel;
 
     // BINDINGS
     FragmentMainBinding mainBinding;
@@ -52,6 +67,8 @@ public class MainFragment extends Fragment{
     // UI
     private DrawerLayout drawer;
     private Toolbar toolbar;
+    public static int FRAGMENT_SELECTED = 1;
+
 
     // Listeners
     private final BottomNavigationView.OnNavigationItemSelectedListener bottomNavListener =
@@ -77,6 +94,41 @@ public class MainFragment extends Fragment{
 
                 return true;
             };
+    private final OnMenuItemClickListener searchListener = menuItem -> {
+        switch (FRAGMENT_SELECTED) {
+            //MAPS VIEW
+            case 1:
+                List<Place.Field> fieldList = Arrays.asList(Place.Field.ADDRESS, Place.Field.NAME, Place.Field.LAT_LNG);
+                Intent intent = new Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fieldList)
+                        .setTypeFilter(TypeFilter.ESTABLISHMENT)
+                        .setCountry("FR")
+                        .setLocationBias(RectangularBounds.newInstance(
+                                new LatLng(48.638732, 2.056947),
+                                new LatLng(49.031723, 2.694153)))
+                        .build(getContext());
+
+                startActivityForResult(intent, 100);
+                break;
+            //LIST VIEW
+            case 2:
+                List<Place.Field> fieldList2 = Arrays.asList(Place.Field.ADDRESS, Place.Field.NAME);
+                Intent intent2 = new Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fieldList2)
+                        .setTypeFilter(TypeFilter.ESTABLISHMENT)
+                        .setCountry("FR")
+                        .setLocationBias(RectangularBounds.newInstance(
+                                new LatLng(48.638732, 2.056947),
+                                new LatLng(49.031723, 2.694153)))
+                        .build(getContext());
+
+                startActivityForResult(intent2, 200);
+                break;
+            //WORKMATES
+            case 3:
+
+                break;
+        }
+        return true;
+    };
     private final NavigationView.OnNavigationItemSelectedListener drawerListener =
             item -> {
                 Fragment selectedFragment = null;
@@ -99,6 +151,8 @@ public class MainFragment extends Fragment{
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        userViewModel = new ViewModelProvider(getActivity()).get(UserViewModel.class);
+        sharedViewModel = new ViewModelProvider(getActivity()).get(SharedViewModel.class);
     }
 
     @Override
@@ -112,7 +166,6 @@ public class MainFragment extends Fragment{
         super.onViewCreated(view, savedInstanceState);
         mainBinding = FragmentMainBinding.bind(view);
         navController = Navigation.findNavController(view);
-        userViewModel = new ViewModelProvider(getActivity()).get(UserViewModel.class);
 
         updateUi();
 
@@ -120,9 +173,9 @@ public class MainFragment extends Fragment{
     }
 
     public void updateUi() {
-
         toolbar = mainBinding.toolbar;
         toolbar.setTitle("I'm Hungry !");
+        toolbar.getMenu().getItem(0).setOnMenuItemClickListener(searchListener);
 
         drawer = mainBinding.drawerLayout;
         NavigationView navView = mainBinding.navView;
@@ -149,6 +202,22 @@ public class MainFragment extends Fragment{
     public void showSettings() {
         SettingsDialog settingsDialog = new SettingsDialog();
         settingsDialog.show(getChildFragmentManager(), "settings Dialog");
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 100 && resultCode == RESULT_OK) {
+            Place place = Autocomplete.getPlaceFromIntent(data);
+
+            sharedViewModel.setSearchLocation(place.getLatLng());
+
+            Log.d(TAG, "onActivityResult: " + place.getName());
+        } else if (requestCode == 200 && resultCode == RESULT_OK) {
+            Place place = Autocomplete.getPlaceFromIntent(data);
+
+            Log.d(TAG, "onActivityResult: " + place.getName());
+        }
     }
 
     public static class SettingsDialog extends DialogFragment {

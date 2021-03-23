@@ -33,11 +33,9 @@ public class DetailFragment extends Fragment {
     SharedViewModel sharedViewModel;
     UserViewModel userViewModel;
     DetailAdapter adapter;
-
     Result restaurant;
     User currentUser;
     List<User> userList = new ArrayList<>();
-
     FragmentRestaurantDetailBinding bindings;
 
     //Listener
@@ -45,14 +43,28 @@ public class DetailFragment extends Fragment {
         @Override
         public void onClick(View view) {
             if (!currentUser.getHasBooked()) {
-                //Updating Firebase data and local data for the UI
+                //Updating local data for the UI
                 currentUser.setHasBooked(true);
                 currentUser.setPlaceBooked(restaurant.getName());
-                DrawableCompat.setTint(bindings.detailFab.getDrawable(), DetailFragment.this.getResources().getColor(R.color.secondaryColor));
+                DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.secondaryColor));
             } else if (currentUser.getPlaceBooked().equals(restaurant.getName())) {
                 DetailFragment.this.FABAlertDialog(1);
             } else {
                 DetailFragment.this.FABAlertDialog(2);
+            }
+            updateAdapter();
+        }
+    };
+    private final OnClickListener callLikeWebsiteListener = new OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            switch (view.getId()) {
+                case R.id.call_btn:
+                    break;
+                case R.id.like_btn:
+                    break;
+                case R.id.website_btn:
+                    break;
             }
         }
     };
@@ -87,18 +99,14 @@ public class DetailFragment extends Fragment {
         //FAB Listener
         bindings.detailFab.setOnClickListener(fabListener);
 
-        updateAdapter();
+        bindings.callBtn.setOnClickListener(callLikeWebsiteListener);
+        bindings.likeBtn.setOnClickListener(callLikeWebsiteListener);
+        bindings.websiteBtn.setOnClickListener(callLikeWebsiteListener);
 
-        //TODO : Voir avec Virgile pourquoi ça marche toujours pas ! J'y arrive pas !
-        userViewModel.getUsersOnPlace(restaurant.getName()).observe(getActivity(), new Observer<List<User>>() {
-            @Override
-            public void onChanged(List<User> users) {
-                userList.addAll(users);
-            }
-        });
+        updateAdapter();
     }
 
-    //onDestroy to update Online data when View is changed
+    // onDestroy to update Online data when View is changed
     // I made it this way to prevent the app from updating each time the FAB is clicked.
     @Override
     public void onDestroyView() {
@@ -181,6 +189,20 @@ public class DetailFragment extends Fragment {
         bindings.detailRecyclerview.setLayoutManager(new LinearLayoutManager(this.getContext(), LinearLayoutManager.VERTICAL, false));
         bindings.detailRecyclerview.setHasFixedSize(false);
         bindings.detailRecyclerview.setAdapter(adapter);
+
+        //RecyclerView update with users having their lunch set here
+        userViewModel.getAllUsers().observe(getViewLifecycleOwner(), new Observer<List<User>>() {
+            @Override
+            public void onChanged(List<User> users) {
+                userList.clear();
+                for (User u : users) {
+                    if (u.getPlaceBooked().equals(restaurant.getName())) {
+                        userList.add(u);
+                    }
+                }
+                adapter.updateList(userList);
+            }
+        });
     }
 
     public void updateRestaurantUI() {
@@ -222,10 +244,6 @@ public class DetailFragment extends Fragment {
                     .centerCrop()
                     .into(bindings.restaurantDetailPic);
         }
-    }
-
-    public void updateUserUI() {
-
     }
 }
 

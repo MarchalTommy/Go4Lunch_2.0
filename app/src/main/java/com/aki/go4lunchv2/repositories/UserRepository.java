@@ -1,8 +1,11 @@
 package com.aki.go4lunchv2.repositories;
 
+import android.os.UserHandle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.aki.go4lunchv2.helpers.UserHelper;
@@ -14,6 +17,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
@@ -24,15 +29,31 @@ import static android.content.ContentValues.TAG;
 public class UserRepository {
 
     private User user = new User();
+    private MutableLiveData<User> currentUser = new MutableLiveData<>();
     private ArrayList<User> userList = new ArrayList<User>();
     private MutableLiveData<List<User>> userListLiveData = new MutableLiveData<>();
 
     public User getCurrentUser() {
-        UserHelper.getUser(FirebaseAuth.getInstance().getCurrentUser().getUid()).addOnSuccessListener(documentSnapshot ->
-                user = documentSnapshot.toObject(User.class));
+        UserHelper.getUser(FirebaseAuth.getInstance().getCurrentUser().getUid()).addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                user = documentSnapshot.toObject(User.class);
+            }
+        });
         Log.d(TAG, "getCurrentUser: ");
         return user;
     }
+
+    //TODO : FINIR
+    /*public User getCurrentUserTest(){
+        UserHelper.getUserTest().addSnapshotListener(new EventListener<DocumentSnapshot>() {
+            @Override
+            public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
+                User usertest = value.getData().
+                currentUser.setValue()
+            }
+        });
+    }*/
 
     public FirebaseUser getCurrentFirebaseUser() {
         return UserHelper.getCurrentUser();
