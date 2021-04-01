@@ -19,8 +19,9 @@ import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentListBinding;
 import com.aki.go4lunchv2.events.FromListToDetailEvent;
 import com.aki.go4lunchv2.models.Result;
+import com.aki.go4lunchv2.models.User;
 import com.aki.go4lunchv2.viewmodels.RestaurantViewModel;
-import com.aki.go4lunchv2.viewmodels.SharedViewModel;
+import com.aki.go4lunchv2.viewmodels.UserViewModel;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -31,8 +32,10 @@ import static android.content.ContentValues.TAG;
 
 public class ListFragment extends Fragment {
 
-    SharedViewModel viewModel;
     RestaurantViewModel restaurantViewModel;
+    UserViewModel userViewModel;
+
+    User localUser = User.getInstance();
 
     ListAdapter adapter;
     NavController navController;
@@ -41,7 +44,7 @@ public class ListFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        viewModel = new ViewModelProvider(getActivity()).get(SharedViewModel.class);
+        userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
         restaurantViewModel = new ViewModelProvider(requireActivity()).get(RestaurantViewModel.class);
     }
 
@@ -72,18 +75,18 @@ public class ListFragment extends Fragment {
                 LinearLayoutManager.VERTICAL, false));
         bindings.restaurantsRecyclerView.setAdapter(adapter);
 
-        //Observer for the restaurant list LiveData
-        restaurantViewModel.getRestaurantsAround("48.866062,2.345450", this.getContext()).observe(this.getActivity(), new Observer<ArrayList<Result>>() {
+
+        restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), new Observer<ArrayList<Result>>() {
             @Override
             public void onChanged(ArrayList<Result> results) {
-                bindings.progressBar.setVisibility(View.GONE);
+                bindings.progressBar.hide();
                 if (results != null) {
                     bindings.noData.setVisibility(View.GONE);
                     adapter.updateList(results);
                 } else {
                     Log.d(TAG, "onFailure: RESTAURANTS NOT FOUNDS");
                     bindings.noData.setVisibility(View.VISIBLE);
-                    bindings.noData.setText("An error occured. Please retry later.");
+                    bindings.noData.setText(R.string.error_fetching_restaurants);
                 }
             }
         });
@@ -104,7 +107,7 @@ public class ListFragment extends Fragment {
     @Subscribe
     public void onGettingDetail(FromListToDetailEvent event) {
         Log.d(TAG, "onGettingDetail: Event called successfully : \nRestaurant name : " + event.result.getName());
-        viewModel.setRestaurant(event.result);
         navController.navigate(R.id.action_listFragment_to_detailFragment);
+        EventBus.getDefault().postSticky(new FromListToDetailEvent(event.result));
     }
 }

@@ -9,12 +9,15 @@ import androidx.lifecycle.ViewModel;
 import com.aki.go4lunchv2.models.Result;
 import com.aki.go4lunchv2.repositories.RestaurantRepository;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class RestaurantViewModel extends ViewModel {
 
     //REPOSITORY
     private RestaurantRepository placeRepository;
+
+    private MutableLiveData<ArrayList<Result>> restaurants = new MutableLiveData<>();
 
     public RestaurantViewModel() {
         placeRepository = new RestaurantRepository();
@@ -24,4 +27,18 @@ public class RestaurantViewModel extends ViewModel {
     public LiveData<ArrayList<Result>> getRestaurantsAround(String location, Context context) {
         return placeRepository.fetchRestaurantsAround(location, context);
     }
+
+    public LiveData<Result> getRestaurantFromName(String name, String location, Context context) {
+        return placeRepository.getRestaurantFromName(name, location, context);
+    }
+
+    public LiveData<ArrayList<Result>> getLocalRestaurantsData() {
+        return restaurants;
+    }
+
+    //SETTING DATA
+    public void setRestaurantsAround(ArrayList<Result> restaurantsAround) {
+        restaurants.setValue(restaurantsAround);
+    }
+
 }

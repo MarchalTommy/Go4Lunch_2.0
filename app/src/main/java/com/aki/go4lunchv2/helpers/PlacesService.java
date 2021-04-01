@@ -29,8 +29,15 @@ public interface PlacesService {
 
     @GET("/maps/api/place/nearbysearch/json")
     Call<JsonObject> getRestaurantsAround(@Query("key") String apiKey,
-                                         @Query("location") String userCoordinates,
-                                         @Query("type") String type,
-                                         @Query("rankby") String rankBy);
+                                          @Query("location") String userCoordinates,
+                                          @Query("type") String type,
+                                          @Query("rankby") String rankBy);
+
+    @GET("/maps/api/place/findplacefromtext/json")
+    Call<JsonObject> getRestaurantFromName(@Query("key") String apiKey,
+                                           @Query("input") String placeName,
+                                           @Query("inputtype") String inputType,
+                                           @Query("locationbias") String circleBias,
+                                           @Query("fields") String fields);
 
 }

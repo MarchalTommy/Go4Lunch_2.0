@@ -9,8 +9,10 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.helpers.RestaurantCalls;
+import com.aki.go4lunchv2.models.Candidate;
 import com.aki.go4lunchv2.models.Restaurant;
 import com.aki.go4lunchv2.models.Result;
+import com.aki.go4lunchv2.models.SearchResult;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.gson.Gson;
@@ -24,6 +26,7 @@ public class RestaurantRepository {
 
     private ArrayList<Result> restaurantsAround = new ArrayList<>();
     private MutableLiveData<ArrayList<Result>> resultLiveData = new MutableLiveData<>();
+    private MutableLiveData<Result> restaurantFromName = new MutableLiveData<>();
 
     public MutableLiveData<ArrayList<Result>> fetchRestaurantsAround(String location, Context context) {
         RestaurantCalls.fetchRestaurantsAround(new RestaurantCalls.Callbacks() {
@@ -41,17 +44,44 @@ public class RestaurantRepository {
                             restaurantsAround.add(r);
                         }
                     }
-                    resultLiveData.postValue(restaurantsAround);
+                    resultLiveData.setValue(restaurantsAround);
                 }
             }
 
             @Override
             public void onFailure() {
                 Log.d(TAG, "onFailure: RESTAURANTS NOT FOUND");
-                resultLiveData.postValue(null);
+                resultLiveData.setValue(null);
             }
         }, location, context);
 
         return resultLiveData;
+    }
+
+    public MutableLiveData<Result> getRestaurantFromName(String name, String location, Context context) {
+        RestaurantCalls.fetchRestaurantFromName(new RestaurantCalls.Callbacks() {
+            @Override
+            public void onResponse(@Nullable JsonObject jsonObject) {
+                if(jsonObject != null) {
+                    Gson gson = new Gson();
+                    SearchResult searchResult = gson.fromJson(jsonObject, SearchResult.class);
+                    Result result = new Result();
+                    Candidate candidate = searchResult.getCandidates().get(0);
+                    result.setName(candidate.getName());
+                    result.setVicinity(candidate.getFormattedAddress());
+                    result.setRating(candidate.getRating());
+                    result.setPhotos(candidate.getPhotos());
+
+                    restaurantFromName.setValue(result);
+                }
+            }
+
+            @Override
+            public void onFailure() {
+                restaurantFromName.setValue(null);
+            }
+        }, name, location, context);
+
+        return restaurantFromName;
     }
 }

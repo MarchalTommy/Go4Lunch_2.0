@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -20,16 +21,20 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentMapBinding;
-import com.aki.go4lunchv2.events.FromSearchToMap;
+import com.aki.go4lunchv2.events.FromListToDetailEvent;
+import com.aki.go4lunchv2.events.FromSearchToFragment;
+import com.aki.go4lunchv2.events.MapReadyEvent;
 import com.aki.go4lunchv2.models.Result;
+import com.aki.go4lunchv2.models.User;
 import com.aki.go4lunchv2.viewmodels.RestaurantViewModel;
-import com.aki.go4lunchv2.viewmodels.SharedViewModel;
+import com.aki.go4lunchv2.viewmodels.UserViewModel;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -37,12 +42,10 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -52,28 +55,32 @@ import com.google.android.material.snackbar.Snackbar;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
+import java.util.ArrayList;
+
 import static android.content.ContentValues.TAG;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 public class MapFragment extends Fragment {
 
     RestaurantViewModel restaurantViewModel;
-    SharedViewModel sharedViewModel;
+    UserViewModel userViewModel;
+    User localUser = User.getInstance();
 
     FragmentMapBinding mapBinding;
     SupportMapFragment supportMapFragment;
     FusedLocationProviderClient client;
     NavController navController;
+    LocationManager locationManager;
 
     LatLng latLng;
-    String stringLocation = new String();
+    String stringLocation = "";
     GoogleMap gMap;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        restaurantViewModel = new ViewModelProvider(getActivity()).get(RestaurantViewModel.class);
-        sharedViewModel = new ViewModelProvider(getActivity()).get(SharedViewModel.class);
+        restaurantViewModel = new ViewModelProvider(requireActivity()).get(RestaurantViewModel.class);
+        userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
     }
 
     @Nullable
@@ -82,10 +89,12 @@ public class MapFragment extends Fragment {
         //Init view
         View view = inflater.inflate(R.layout.fragment_map, container, false);
 
+        //Location.distanceBetween();
+
         //Init map fragment
         supportMapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map_frag);
 
-        client = LocationServices.getFusedLocationProviderClient(getActivity());
+        client = LocationServices.getFusedLocationProviderClient(requireActivity());
 
         return view;
     }
@@ -100,41 +109,54 @@ public class MapFragment extends Fragment {
     }
 
     public void initMap() {
-        supportMapFragment.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(GoogleMap googleMap) {
-                //When map is loaded
-                BitmapDescriptor iconBasic = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
-                Bitmap bitmap;
-                BitmapDescriptor iconLunchHere = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
-                googleMap.clear();
-                gMap = googleMap;
+        supportMapFragment.getMapAsync(googleMap -> {
+            //When map is loaded
+            BitmapDescriptor iconBasic = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
+            Bitmap bitmap;
+            BitmapDescriptor iconLunchHere = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
+            googleMap.clear();
+            gMap = googleMap;
 
-                restaurantViewModel.getRestaurantsAround(stringLocation, getContext())
-                        .observe(getViewLifecycleOwner(), results -> {
-                            googleMap.clear();
-                            for (Result r : results) {
+            EventBus.getDefault().post(new MapReadyEvent(true));
+            Log.d(TAG, "onMapReady: EVENT HAS BEEN POSTED SUCCESSFULLY !");
 
-                                LatLng restaurantLocation = new LatLng(
-                                        r.getGeometry().getLocation().getLat(),
-                                        r.getGeometry().getLocation().getLng());
+            getLocalRestaurantsData();
+            locationUpdates();
 
-                                MarkerOptions markerOptions = new MarkerOptions();
-                                markerOptions.icon(iconBasic);
-                                markerOptions.title(r.getName());
-                                markerOptions.position(restaurantLocation);
-
-                                googleMap.addMarker(markerOptions);
-                            }
-                        });
-
-                googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            googleMap.setOnMarkerClickListener(marker -> {
+                restaurantViewModel.getRestaurantFromName(marker.getTitle(), localUser.getLocation(), requireContext()).observe(getViewLifecycleOwner(), new Observer<Result>() {
                     @Override
-                    public boolean onMarkerClick(Marker marker) {
-                        //navController.navigate(R.id.action_mainFragment_to_detailFragment);
-                        return false;
+                    public void onChanged(Result result) {
+                        navController.navigate(R.id.detailFragment);
+                        EventBus.getDefault().postSticky(new FromListToDetailEvent(result));
                     }
                 });
+                return false;
+            });
+
+        });
+    }
+
+    private void getLocalRestaurantsData() {
+        BitmapDescriptor iconBasic = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
+        Bitmap bitmap;
+        BitmapDescriptor iconLunchHere = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
+
+        restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), new Observer<ArrayList<Result>>() {
+            @Override
+            public void onChanged(ArrayList<Result> results) {
+                for(Result r : results) {
+                    LatLng restaurantLocation = new LatLng(
+                            r.getGeometry().getLocation().getLat(),
+                            r.getGeometry().getLocation().getLng());
+
+                    MarkerOptions markerOptions = new MarkerOptions();
+                    markerOptions.icon(iconBasic);
+                    markerOptions.title(r.getName());
+                    markerOptions.position(restaurantLocation);
+
+                    gMap.addMarker(markerOptions);
+                }
             }
         });
     }
@@ -143,12 +165,13 @@ public class MapFragment extends Fragment {
         Log.d(TAG, "onComplete: LOCATION FOR DEVELOPPEMENT PURPOSE => " + location.getLatitude() + " : " + location.getLongitude());
         //For the LatLng var
         latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        //To be accessed from the list view, update on the sharedViewModel
-        sharedViewModel.setUserLocation(latLng);
         //To be easily usable for my google places API call
         stringLocation = latLng.latitude + "," + latLng.longitude;
+        //To be accessed from the list view, update on the sharedViewModel
+        localUser.setLocation(stringLocation);
+        userViewModel.setLocation(latLng);
         //For the map
-        gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+        gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17));
     }
 
     @Override
@@ -165,7 +188,7 @@ public class MapFragment extends Fragment {
 
     //EVENT TO GET THE SEARCHED RESTAURANT FROM THE AUTOCOMPLETE IN THE ACTIVITY
     @Subscribe
-    public void onRestaurantSearch(FromSearchToMap event){
+    public void onRestaurantSearch(FromSearchToFragment event){
         gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(event.place.getLatLng(), 19));
     }
 
@@ -174,9 +197,24 @@ public class MapFragment extends Fragment {
     //LOCATION ACCESS
     //-----------------------------------------
 
+    /**
+     *SuppressLint because this method is called only AFTER permissions have been acquired
+     */
+    @SuppressLint("MissingPermission")
+    private void locationUpdates() {
+        gMap.setMyLocationEnabled(true);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 150000, 5, new LocationListener() {
+            @SuppressLint("MissingPermission")
+            @Override
+            public void onLocationChanged(@NonNull Location location) {
+                locationVariableUpdate(location);
+            }
+        });
+    }
+
     public void getPermissions() {
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PERMISSION_GRANTED) {
             if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) && shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION)) {
                 explainPermissions();
             } else {
@@ -185,7 +223,7 @@ public class MapFragment extends Fragment {
         } else {
             Log.d(TAG, "getPermissions: PERMISSIONS ALREADY GRANTED ");
             //INIT LOCATION MANAGER
-            LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+            locationManager = (LocationManager) requireActivity().getSystemService(Context.LOCATION_SERVICE);
             if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 //When location service is enabled, get last location
                 client.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
@@ -238,14 +276,11 @@ public class MapFragment extends Fragment {
 
     private void displayOptions() {
         Snackbar.make(mapBinding.layoutMapFragment, "You have refused the permission", BaseTransientBottomBar.LENGTH_LONG)
-                .setAction("Settings", new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        final Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                        final Uri uri = Uri.fromParts("package", getActivity().getPackageName(), null);
-                        intent.setData(uri);
-                        startActivity(intent);
-                    }
+                .setAction("Settings", view -> {
+                    final Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    final Uri uri = Uri.fromParts("package", requireActivity().getPackageName(), null);
+                    intent.setData(uri);
+                    startActivity(intent);
                 })
                 .show();
     }
@@ -261,16 +296,13 @@ public class MapFragment extends Fragment {
             if (grantResults[0] == PERMISSION_GRANTED) {
                 //ACCESS LOCATION, IT MEANS THAT PERMISSIONS ARE GOOD
                 Log.d(TAG, "onRequestPermissionsResult: PERMISSIONS GRANTED");
-                LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+                LocationManager locationManager = (LocationManager) requireActivity().getSystemService(Context.LOCATION_SERVICE);
                 if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                     //When location service is enabled, get last location
-                    client.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Location> task) {
-                            Location location = task.getResult();
-                            if (location != null) {
-                                locationVariableUpdate(location);
-                            }
+                    client.getLastLocation().addOnCompleteListener(task -> {
+                        Location location = task.getResult();
+                        if (location != null) {
+                            locationVariableUpdate(location);
                         }
                     });
                 }

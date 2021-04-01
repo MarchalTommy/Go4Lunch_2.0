@@ -2,24 +2,50 @@ package com.aki.go4lunchv2.models;
 
 import androidx.annotation.Nullable;
 
+import com.google.android.gms.maps.model.LatLng;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class User {
 
+    private static final User userInstance = new User();
+
+    public static User getInstance() {
+        return userInstance;
+    }
+
+    public Object readResolve() {
+        return User.getInstance();
+    }
+
     private String uid, username;
-    private Boolean hasBooked = false;;
-    @Nullable private String urlPicture;
+    private Boolean hasBooked = false;
+    @Nullable
+    private String urlPicture;
     private String placeBooked = "null";
+    private String location = "";
 
-    public User() {}
+    public User() {
+    }
 
-    public User(String uid, String username, @Nullable String urlPicture, Boolean hasBooked, String placeBooked) {
+    public User(String uid, String username, @Nullable String urlPicture, Boolean hasBooked, String placeBooked, String location) {
         this.uid = uid;
         this.urlPicture = urlPicture;
         this.username = username;
         this.hasBooked = hasBooked;
         this.placeBooked = placeBooked;
+        this.location = location;
     }
 
-    //TODO : vérifier si meilleur temps de renvoyer un "faux" result avec le nom, ou un string du nom
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
     public String getPlaceBooked() {
         return placeBooked;
     }

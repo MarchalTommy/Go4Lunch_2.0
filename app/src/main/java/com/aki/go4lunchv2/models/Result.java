@@ -75,6 +75,7 @@ public class Result implements Serializable, Parcelable {
     @SerializedName("permanently_closed")
     @Expose
     private boolean permanentlyClosed;
+    private int peopleInterested = 0;
 
     protected Result(Parcel in) {
         this.businessStatus = ((String) in.readValue((String.class.getClassLoader())));
@@ -137,6 +138,14 @@ public class Result implements Serializable, Parcelable {
         this.userRatingsTotal = userRatingsTotal;
         this.vicinity = vicinity;
         this.permanentlyClosed = permanentlyClosed;
+    }
+
+    public int getPeopleInterested() {
+        return peopleInterested;
+    }
+
+    public void setPeopleInterested(int i){
+        peopleInterested = i;
     }
 
     public String getBusinessStatus() {

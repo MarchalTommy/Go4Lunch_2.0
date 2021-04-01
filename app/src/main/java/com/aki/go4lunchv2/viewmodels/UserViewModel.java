@@ -1,10 +1,14 @@
 package com.aki.go4lunchv2.viewmodels;
 
+import android.content.Context;
+
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.aki.go4lunchv2.models.User;
 import com.aki.go4lunchv2.repositories.UserRepository;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.List;
@@ -14,19 +18,11 @@ public class UserViewModel extends ViewModel {
     //REPOSITORY
     private final UserRepository userRepository = new UserRepository();
 
-    private MutableLiveData<User> currentUser = new MutableLiveData<>();
     private MutableLiveData<User> user = new MutableLiveData<>();
 
-    private User currentUserPOJO = new User();
-
     //GETTING DATA
-    public MutableLiveData<User> getCurrentUser() {
-        currentUser.setValue(userRepository.getCurrentUser());
-        return currentUser;
-    }
-
-    public User getCurrentUserPOJO() {
-        return currentUserPOJO = userRepository.getCurrentUser();
+    public LiveData<User> getCurrentUser() {
+        return userRepository.getCurrentUser();
     }
 
     public FirebaseUser getCurrentFirebaseUser() {
@@ -47,6 +43,14 @@ public class UserViewModel extends ViewModel {
     }
 
     //UPDATE DATA
+    public void setLocation(LatLng location){
+        userRepository.setLocation(location);
+    }
+
+    public void logout(Context context) {
+        userRepository.logout(context);
+    }
+
     public void createCurrentUserInFirestore() {
         userRepository.createUserInFirestore();
     }

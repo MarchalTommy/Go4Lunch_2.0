@@ -1,6 +1,5 @@
 package com.aki.go4lunchv2.helpers;
 
-import android.app.Application;
 import android.content.Context;
 import android.util.Log;
 
@@ -25,7 +24,7 @@ public class RestaurantCalls {
         void onFailure();
     }
 
-    public static void fetchRestaurantsAround(Callbacks callbacks, String coordinates, Context context){
+    public static void fetchRestaurantsAround(Callbacks callbacks, String coordinates, Context context) {
 
         final WeakReference<Callbacks> callbacksWeakReference = new WeakReference<Callbacks>(callbacks);
 
@@ -41,7 +40,7 @@ public class RestaurantCalls {
             @Override
             public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
 
-                if(callbacksWeakReference.get() != null) {
+                if (callbacksWeakReference.get() != null) {
                     callbacksWeakReference.get().onResponse(response.body());
                 }
             }
@@ -49,9 +48,40 @@ public class RestaurantCalls {
             @Override
             public void onFailure(Call<JsonObject> call, Throwable t) {
 
-                Log.d(TAG, "onFailure: "+ t.getMessage());
+                Log.d(TAG, "onFailure: " + t.getMessage());
 
-                if(callbacksWeakReference.get() != null) {
+                if (callbacksWeakReference.get() != null) {
+                    callbacksWeakReference.get().onFailure();
+                }
+            }
+        });
+
+    }
+
+    public static void fetchRestaurantFromName(Callbacks callbacks, String name, String coordinates, Context context) {
+        final WeakReference<Callbacks> callbacksWeakReference = new WeakReference<>(callbacks);
+
+        PlacesService placesService = PlacesService.setRetrofit();
+
+        Call<JsonObject> call = placesService.getRestaurantFromName(
+                context.getResources().getString(R.string.GOOGLE_MAPS_API_KEY),
+                name,
+                "textquery",
+                "circle:1000@" + coordinates,
+                "photos,formatted_address,name,rating");
+
+        call.enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                if (callbacksWeakReference.get() != null) {
+                    callbacksWeakReference.get().onResponse(response.body());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {
+                Log.d(TAG, "onFailure: " + t.getMessage());
+                if (callbacksWeakReference.get() != null) {
                     callbacksWeakReference.get().onFailure();
                 }
             }

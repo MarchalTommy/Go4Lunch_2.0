@@ -1,6 +1,6 @@
 package com.aki.go4lunchv2.repositories;
 
-import android.os.UserHandle;
+import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -10,16 +10,17 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.aki.go4lunchv2.helpers.UserHelper;
 import com.aki.go4lunchv2.models.User;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.model.Document;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,45 +33,41 @@ public class UserRepository {
     private MutableLiveData<User> currentUser = new MutableLiveData<>();
     private ArrayList<User> userList = new ArrayList<User>();
     private MutableLiveData<List<User>> userListLiveData = new MutableLiveData<>();
+    private MutableLiveData<List<User>> onPlaceUsers = new MutableLiveData<>();
 
-    public User getCurrentUser() {
-        UserHelper.getUser(FirebaseAuth.getInstance().getCurrentUser().getUid()).addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-            @Override
-            public void onSuccess(DocumentSnapshot documentSnapshot) {
-                user = documentSnapshot.toObject(User.class);
-            }
-        });
-        Log.d(TAG, "getCurrentUser: ");
-        return user;
-    }
-
-    //TODO : FINIR
-    /*public User getCurrentUserTest(){
-        UserHelper.getUserTest().addSnapshotListener(new EventListener<DocumentSnapshot>() {
+    public LiveData<User> getCurrentUser() {
+        UserHelper.getCurrentUser().addSnapshotListener(new EventListener<DocumentSnapshot>() {
             @Override
             public void onEvent(@Nullable DocumentSnapshot value, @Nullable FirebaseFirestoreException error) {
-                User usertest = value.getData().
-                currentUser.setValue()
+                User user = value.toObject(User.class);
+                        currentUser.setValue(user);
             }
         });
-    }*/
+        return currentUser;
+    }
+
+    public void logout(Context context) {
+        UserHelper.logout(context);
+    }
 
     public FirebaseUser getCurrentFirebaseUser() {
-        return UserHelper.getCurrentUser();
+        return UserHelper.getCurrentUserFirebase();
     }
 
     public void createUser(String uid, String username, String urlPicture) {
-        UserHelper.createUser(uid, username, urlPicture, false, "");
+        UserHelper.createUser(uid, username, urlPicture, false, "", "");
     }
 
     public void createUserInFirestore() {
-        if (UserHelper.getCurrentUser() != null) {
-            String urlPicture = (UserHelper.getCurrentUser().getPhotoUrl() != null) ? UserHelper.getCurrentUser().getPhotoUrl().toString() : null;
-            String username = UserHelper.getCurrentUser().getDisplayName();
-            String uid = UserHelper.getCurrentUser().getUid();
+        if(getCurrentUser().equals(null)){
+
+            String urlPicture = (UserHelper.getCurrentUserFirebase().getPhotoUrl() != null) ? UserHelper.getCurrentUserFirebase().getPhotoUrl().toString() : null;
+            String username = UserHelper.getCurrentUserFirebase().getDisplayName();
+            String uid = UserHelper.getCurrentUserFirebase().getUid();
 
             createUser(uid, username, urlPicture);
         }
+
     }
 
     public void deleteUser(String uid) {
@@ -111,7 +108,7 @@ public class UserRepository {
 
     public MutableLiveData<List<User>> getUsersOnPlace(String placeName) {
         userList.clear();
-        UserHelper.getUsersOnPlace(placeName).addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+       /* UserHelper.getUsersOnPlace(placeName).addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 task.addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
@@ -128,8 +125,25 @@ public class UserRepository {
                     }
                 });
             }
+        });*/
+
+        onPlaceUsers.setValue(userList);
+
+        UserHelper.getUserCollection().whereEqualTo("placeBooked", placeName).addSnapshotListener(new EventListener<QuerySnapshot>() {
+            @Override
+            public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
+                List<User> userList = new ArrayList<>();
+                for(DocumentSnapshot ds : value.getDocuments()){
+                    userList.add(ds.toObject(User.class));
+                }
+                onPlaceUsers.setValue(userList);
+            }
         });
-        userListLiveData.postValue(userList);
-        return userListLiveData;
+        return onPlaceUsers;
+    }
+
+    public void setLocation(LatLng location) {
+        String locationString = location.latitude + "," + location.longitude;
+        UserHelper.updateLocation(locationString);
     }
 }
