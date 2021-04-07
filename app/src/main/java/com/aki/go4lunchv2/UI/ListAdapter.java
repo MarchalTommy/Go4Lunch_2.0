@@ -2,36 +2,45 @@ package com.aki.go4lunchv2.UI;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.icu.util.GregorianCalendar;
+import android.location.Location;
+import android.text.format.Time;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.RestaurantsRecyclerviewItemBinding;
+import com.aki.go4lunchv2.events.FromAdapterToFragment;
 import com.aki.go4lunchv2.events.FromListToDetailEvent;
 import com.aki.go4lunchv2.models.Result;
+import com.aki.go4lunchv2.models.User;
 import com.bumptech.glide.Glide;
 
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
 public class ListAdapter extends RecyclerView.Adapter<ListAdapter.RestaurantViewHolder> {
 
     Context context;
     private List<Result> results = new ArrayList<>();
+    private List<User> allUsers = new ArrayList<>();
+    private final User localUser = User.getInstance();
 
     public ListAdapter(Context context) {
         this.context = context;
     }
 
-    void updateList(final List<Result> results) {
+    void updateList(final List<Result> results, final List<User> users) {
         this.results = results;
+        this.allUsers = users;
         notifyDataSetChanged();
     }
 
@@ -47,7 +56,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.RestaurantView
         holder.bind(results.get(position));
 
         holder.itemView.setOnClickListener(view -> {
-            EventBus.getDefault().post(new FromListToDetailEvent(results.get(position)));
+            EventBus.getDefault().post(new FromAdapterToFragment(results.get(position)));
         });
     }
 
@@ -75,16 +84,19 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.RestaurantView
 
                 if (result.getPhotos() != null) {
 
-                    StringBuilder stringBuilder = new StringBuilder();
-                    stringBuilder.append("https://maps.googleapis.com/maps/api/place/photo?");
-                    stringBuilder.append("maxheight=400&photoreference=");
-                    stringBuilder.append(result.getPhotos().get(0).getPhotoReference());
-                    stringBuilder.append("&key=" + context.getResources().getString(R.string.GOOGLE_MAPS_API_KEY));
-                    String photoUrl = stringBuilder.toString();
+                    String photoUrl = "https://maps.googleapis.com/maps/api/place/photo?" +
+                            "maxheight=400&photoreference=" +
+                            result.getPhotos().get(0).getPhotoReference() +
+                            "&key=" + context.getResources().getString(R.string.GOOGLE_MAPS_API_KEY);
 
                     //Photo binding
                     Glide.with(context)
                             .load(photoUrl)
+                            .centerCrop()
+                            .into(binding.restaurantPic);
+                } else {
+                    Glide.with(context)
+                            .load(R.drawable.restaurant_default)
                             .centerCrop()
                             .into(binding.restaurantPic);
                 }
@@ -92,12 +104,12 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.RestaurantView
 
                 //Opening time binding
                 if (result.getOpeningHours() != null) {
-                    if (result.getOpeningHours().toString().contains("Closed")) {
-                        binding.restaurantTime.setText(result.getOpeningHours().toString());
-                        binding.restaurantTime.setTextColor(Color.RED);
-                    } else {
-                        binding.restaurantTime.setText(result.getOpeningHours().toString());
+                    if (result.getOpeningHours().getOpenNow()) {
+                        binding.restaurantTime.setText("Open now");
                         binding.restaurantTime.setTextColor(Color.parseColor("#525252"));
+                    } else {
+                        binding.restaurantTime.setText("Closed");
+                        binding.restaurantTime.setTextColor(Color.RED);
                     }
                 } else {
                     binding.restaurantTime.setText("No info");
@@ -121,7 +133,26 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.RestaurantView
                     binding.restaurantRatingBar.setRating(0);
                 }
 
-                //TODO : finir les binds (distance, combien y sont, etc...)
+                //Workmates eating here
+                int onPlace = 0;
+                for (User u : allUsers) {
+                    if (u.getPlaceBooked().equals(result.getName())) {
+                        onPlace++;
+                    }
+                }
+                binding.numberOfWorkmatesEatingHere.setText("" + onPlace);
+
+                //Distance to the restaurant
+                float[] distanceTo = new float[1];
+                ArrayList<String> userLocation = new ArrayList<>(Arrays.asList(localUser.getLocation().split(",")));
+                double lat, lng;
+                lat = Double.parseDouble(userLocation.get(0));
+                lng = Double.parseDouble(userLocation.get(1));
+                Location.distanceBetween(lat, lng, result.getGeometry().getLocation().getLat(), result.getGeometry().getLocation().getLng(), distanceTo);
+                String string = String.valueOf((int) distanceTo[0] + " m");
+
+                binding.restaurantDistance.setText(string);
+
             }
         }
     }

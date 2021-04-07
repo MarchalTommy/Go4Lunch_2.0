@@ -12,6 +12,7 @@ import com.aki.go4lunchv2.helpers.RestaurantCalls;
 import com.aki.go4lunchv2.models.Candidate;
 import com.aki.go4lunchv2.models.Restaurant;
 import com.aki.go4lunchv2.models.Result;
+import com.aki.go4lunchv2.models.ResultDetails;
 import com.aki.go4lunchv2.models.SearchResult;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.net.PlacesClient;
@@ -27,6 +28,7 @@ public class RestaurantRepository {
     private ArrayList<Result> restaurantsAround = new ArrayList<>();
     private MutableLiveData<ArrayList<Result>> resultLiveData = new MutableLiveData<>();
     private MutableLiveData<Result> restaurantFromName = new MutableLiveData<>();
+    private MutableLiveData<ResultDetails> restaurantDetail = new MutableLiveData<>();
 
     public MutableLiveData<ArrayList<Result>> fetchRestaurantsAround(String location, Context context) {
         RestaurantCalls.fetchRestaurantsAround(new RestaurantCalls.Callbacks() {
@@ -58,7 +60,28 @@ public class RestaurantRepository {
         return resultLiveData;
     }
 
-    public MutableLiveData<Result> getRestaurantFromName(String name, String location, Context context) {
+    public MutableLiveData<ResultDetails> getRestaurantDetail(String id, Context context) {
+        restaurantDetail.setValue(null);
+        RestaurantCalls.getRestaurantDetailsByID(new RestaurantCalls.Callbacks() {
+            @Override
+            public void onResponse(@Nullable JsonObject jsonObject) {
+                if(jsonObject != null) {
+                    Gson gson = new Gson();
+                    ResultDetails result = gson.fromJson(jsonObject, ResultDetails.class);
+                    restaurantDetail.setValue(result);
+                }
+            }
+
+            @Override
+            public void onFailure() {
+                restaurantDetail.setValue(null);
+            }
+        }, id, context);
+        return restaurantDetail;
+    }
+
+    public MutableLiveData<Result> getRestaurantFromName(String id, String location, Context context) {
+        restaurantFromName.setValue(null);
         RestaurantCalls.fetchRestaurantFromName(new RestaurantCalls.Callbacks() {
             @Override
             public void onResponse(@Nullable JsonObject jsonObject) {
@@ -71,6 +94,7 @@ public class RestaurantRepository {
                     result.setVicinity(candidate.getFormattedAddress());
                     result.setRating(candidate.getRating());
                     result.setPhotos(candidate.getPhotos());
+                    result.setPlaceId(candidate.getPlaceId());
 
                     restaurantFromName.setValue(result);
                 }
@@ -80,7 +104,7 @@ public class RestaurantRepository {
             public void onFailure() {
                 restaurantFromName.setValue(null);
             }
-        }, name, location, context);
+        }, id, location, context);
 
         return restaurantFromName;
     }

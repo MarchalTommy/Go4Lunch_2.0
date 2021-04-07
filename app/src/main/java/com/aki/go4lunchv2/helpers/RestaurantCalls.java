@@ -58,6 +58,35 @@ public class RestaurantCalls {
 
     }
 
+    public static void getRestaurantDetailsByID(Callbacks callbacks, String id, Context context) {
+        final WeakReference<Callbacks> callbacksWeakReference = new WeakReference<>(callbacks);
+
+        PlacesService placesService = PlacesService.setRetrofit();
+
+        Call<JsonObject> call = placesService.getRestaurantDetails(
+                context.getResources().getString(R.string.GOOGLE_MAPS_API_KEY),
+                id,
+                "fr",
+                "formatted_address,name,geometry,photo,place_id,url,international_phone_number,opening_hours,rating");
+
+        call.enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                if (callbacksWeakReference.get() != null) {
+                    callbacksWeakReference.get().onResponse(response.body());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {
+                Log.d(TAG, "onFailure: " + t.getMessage());
+                if (callbacksWeakReference.get() != null) {
+                    callbacksWeakReference.get().onFailure();
+                }
+            }
+        });
+    }
+
     public static void fetchRestaurantFromName(Callbacks callbacks, String name, String coordinates, Context context) {
         final WeakReference<Callbacks> callbacksWeakReference = new WeakReference<>(callbacks);
 
@@ -67,8 +96,8 @@ public class RestaurantCalls {
                 context.getResources().getString(R.string.GOOGLE_MAPS_API_KEY),
                 name,
                 "textquery",
-                "circle:1000@" + coordinates,
-                "photos,formatted_address,name,rating");
+                "circle:10000@" + coordinates,
+                "photos,place_id,formatted_address,name,rating,geometry,photos");
 
         call.enqueue(new Callback<JsonObject>() {
             @Override

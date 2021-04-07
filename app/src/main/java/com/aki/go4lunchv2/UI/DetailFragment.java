@@ -2,6 +2,8 @@ package com.aki.go4lunchv2.UI;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,6 +14,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -20,8 +23,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentRestaurantDetailBinding;
 import com.aki.go4lunchv2.events.FromListToDetailEvent;
+import com.aki.go4lunchv2.events.FromMapToDetailEvent;
 import com.aki.go4lunchv2.events.YourLunchEvent;
 import com.aki.go4lunchv2.models.Result;
+import com.aki.go4lunchv2.models.ResultDetailed;
+import com.aki.go4lunchv2.models.ResultDetails;
 import com.aki.go4lunchv2.models.User;
 import com.aki.go4lunchv2.viewmodels.UserViewModel;
 import com.bumptech.glide.Glide;
@@ -42,7 +48,7 @@ public class DetailFragment extends Fragment {
     Context context;
     UserViewModel userViewModel;
     DetailAdapter adapter;
-    Result restaurant;
+    ResultDetailed restaurantDetail;
     List<User> userList = new ArrayList<>();
     FragmentRestaurantDetailBinding bindings;
 
@@ -55,10 +61,10 @@ public class DetailFragment extends Fragment {
             if (!localUser.getHasBooked()) {
                 //Updating data for the UI
                 userViewModel.updateHasBooked(true);
-                userViewModel.updatePlaceBooked(restaurant.getName());
+                userViewModel.updatePlaceBooked(restaurantDetail.getName());
                 updateAdapter();
                 DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.secondaryColor));
-            } else if (localUser.getPlaceBooked().equals(restaurant.getName())) {
+            } else if (localUser.getPlaceBooked().equals(restaurantDetail.getName())) {
                 DetailFragment.this.FABAlertDialog(1);
             } else {
                 DetailFragment.this.FABAlertDialog(2);
@@ -69,10 +75,12 @@ public class DetailFragment extends Fragment {
     private final OnClickListener callLikeWebsiteListener = view -> {
         switch (view.getId()) {
             case R.id.call_btn:
+                startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + restaurantDetail.getInternationalPhoneNumber())));
                 break;
             case R.id.like_btn:
                 break;
             case R.id.website_btn:
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(restaurantDetail.getUrl())));
                 break;
         }
     };
@@ -88,6 +96,7 @@ public class DetailFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
+        restaurantDetail = new ResultDetailed();
         EventBus.getDefault().register(this);
     }
 
@@ -107,9 +116,6 @@ public class DetailFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         bindings = FragmentRestaurantDetailBinding.bind(view);
-
-        //Initializing the restaurant to be able to receive the data
-        restaurant = new Result();
 
         //Getting data and updating the UI
         getDataFromViewModel();
@@ -135,7 +141,7 @@ public class DetailFragment extends Fragment {
         userViewModel.getAllUsers().observe(getViewLifecycleOwner(), users -> {
             userList.clear();
             for (User u : users) {
-                if (u.getPlaceBooked().equals(restaurant.getName())) {
+                if (u.getPlaceBooked().equals(restaurantDetail.getName())) {
                     userList.add(u);
                 }
             }
@@ -145,7 +151,7 @@ public class DetailFragment extends Fragment {
     }
 
     private void updateAdapter(){
-        userViewModel.getUsersOnPlace(restaurant.getName()).observe(getViewLifecycleOwner(), users -> adapter.updateList(users));
+        userViewModel.getUsersOnPlace(restaurantDetail.getName()).observe(getViewLifecycleOwner(), users -> adapter.updateList(users));
     }
 
     // I made it this way to prevent the app from updating each time the FAB is clicked.
@@ -168,7 +174,7 @@ public class DetailFragment extends Fragment {
             localUser.setUid(user.getUid());
 
             //FAB design (green when lunch is here, black otherwise)
-            if (localUser.getPlaceBooked().equals(restaurant.getName())) {
+            if (localUser.getPlaceBooked().equals(restaurantDetail.getName())) {
                 DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.secondaryColor));
             } else {
                 DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.black));
@@ -196,7 +202,7 @@ public class DetailFragment extends Fragment {
                         .setPositiveButton("Yes please !", (dialogInterface, i) -> {
 
                             //Updating data for the UI
-                            userViewModel.updatePlaceBooked(restaurant.getName());
+                            userViewModel.updatePlaceBooked(restaurantDetail.getName());
                             updateAdapter();
                             DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.secondaryColor));
                         })
@@ -207,8 +213,7 @@ public class DetailFragment extends Fragment {
         }
     }
 
-    public void updateRestaurantUI() {
-
+    public void updateRestaurantUI(ResultDetailed restaurant) {
         //Rating
         bindings.detailRatingBar.setNumStars(3);
         bindings.detailRatingBar.setStepSize(1);
@@ -227,7 +232,7 @@ public class DetailFragment extends Fragment {
         }
 
         //Basic info
-        bindings.restaurantDetailAddress.setText(restaurant.getVicinity());
+        bindings.restaurantDetailAddress.setText(restaurant.getFormattedAddress());
         bindings.restaurantDetailName.setText(restaurant.getName());
 
         //Photo
@@ -243,33 +248,38 @@ public class DetailFragment extends Fragment {
                     .load(photoUrl)
                     .centerCrop()
                     .into(bindings.restaurantDetailPic);
+        } else {
+            Glide.with(context)
+                    .load(R.drawable.restaurant_default)
+                    .centerCrop()
+                    .into(bindings.restaurantDetailPic);
         }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     public void fromMenu(YourLunchEvent event){
-        restaurant.setName(event.result.getName());
-        restaurant.setVicinity(event.result.getVicinity());
-        restaurant.setRating(event.result.getRating());
-        restaurant.setPhotos(event.result.getPhotos());
+        //Initializing the restaurant to be able to receive the data
+        restaurantDetail = event.result;
 
-        updateRestaurantUI();
+        updateRestaurantUI(restaurantDetail);
 
         EventBus.getDefault().removeStickyEvent(this);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    public void onDetailFragment(FromListToDetailEvent event) {
-        Log.d(TAG, "onDetailFragment: \n" + event.result.getName());
+    public void fromList(FromListToDetailEvent event) {
+        //Initializing the restaurant to be able to receive the data
+        Log.d(TAG, "fromList: EVENT SUCCESSFUL" + restaurantDetail.getName());
+        restaurantDetail = event.result;
 
-        restaurant.setName(event.result.getName());
-        restaurant.setPhotos(event.result.getPhotos());
-        restaurant.setRating(event.result.getRating());
-        restaurant.setVicinity(event.result.getVicinity());
-
-        updateRestaurantUI();
+        updateRestaurantUI(restaurantDetail);
 
         EventBus.getDefault().removeStickyEvent(this);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
+    public void fromMap(FromMapToDetailEvent event) {
+
     }
 }
 

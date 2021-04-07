@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
-public class Candidate {
+public class ResultDetailed {
 
     @SerializedName("formatted_address")
     @Expose
@@ -13,9 +13,15 @@ public class Candidate {
     @SerializedName("geometry")
     @Expose
     private Geometry geometry;
+    @SerializedName("international_phone_number")
+    @Expose
+    private String internationalPhoneNumber;
     @SerializedName("name")
     @Expose
     private String name;
+    @SerializedName("opening_hours")
+    @Expose
+    private OpeningHours openingHours;
     @SerializedName("photos")
     @Expose
     private List<Photo> photos = null;
@@ -25,6 +31,9 @@ public class Candidate {
     @SerializedName("rating")
     @Expose
     private Double rating;
+    @SerializedName("url")
+    @Expose
+    private String url;
 
     public String getFormattedAddress() {
         return formattedAddress;
@@ -34,7 +43,7 @@ public class Candidate {
         this.formattedAddress = formattedAddress;
     }
 
-    public Candidate withFormattedAddress(String formattedAddress) {
+    public ResultDetailed withFormattedAddress(String formattedAddress) {
         this.formattedAddress = formattedAddress;
         return this;
     }
@@ -47,8 +56,21 @@ public class Candidate {
         this.geometry = geometry;
     }
 
-    public Candidate withGeometry(Geometry geometry) {
+    public ResultDetailed withGeometry(Geometry geometry) {
         this.geometry = geometry;
+        return this;
+    }
+
+    public String getInternationalPhoneNumber() {
+        return internationalPhoneNumber;
+    }
+
+    public void setInternationalPhoneNumber(String internationalPhoneNumber) {
+        this.internationalPhoneNumber = internationalPhoneNumber;
+    }
+
+    public ResultDetailed withInternationalPhoneNumber(String internationalPhoneNumber) {
+        this.internationalPhoneNumber = internationalPhoneNumber;
         return this;
     }
 
@@ -60,8 +82,21 @@ public class Candidate {
         this.name = name;
     }
 
-    public Candidate withName(String name) {
+    public ResultDetailed withName(String name) {
         this.name = name;
+        return this;
+    }
+
+    public OpeningHours getOpeningHours() {
+        return openingHours;
+    }
+
+    public void setOpeningHours(OpeningHours openingHours) {
+        this.openingHours = openingHours;
+    }
+
+    public ResultDetailed withOpeningHours(OpeningHours openingHours) {
+        this.openingHours = openingHours;
         return this;
     }
 
@@ -73,7 +108,7 @@ public class Candidate {
         this.photos = photos;
     }
 
-    public Candidate withPhotos(List<Photo> photos) {
+    public ResultDetailed withPhotos(List<Photo> photos) {
         this.photos = photos;
         return this;
     }
@@ -86,7 +121,7 @@ public class Candidate {
         this.placeId = placeId;
     }
 
-    public Candidate withPlaceId(String placeId) {
+    public ResultDetailed withPlaceId(String placeId) {
         this.placeId = placeId;
         return this;
     }
@@ -99,8 +134,21 @@ public class Candidate {
         this.rating = rating;
     }
 
-    public Candidate withRating(Double rating) {
+    public ResultDetailed withRating(Double rating) {
         this.rating = rating;
+        return this;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public ResultDetailed withUrl(String url) {
+        this.url = url;
         return this;
     }
 

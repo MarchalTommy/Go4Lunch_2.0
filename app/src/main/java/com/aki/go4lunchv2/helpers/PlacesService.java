@@ -40,4 +40,10 @@ public interface PlacesService {
                                            @Query("locationbias") String circleBias,
                                            @Query("fields") String fields);
 
+    @GET("/maps/api/place/details/json")
+    Call<JsonObject> getRestaurantDetails(@Query("key") String apiKey,
+                                          @Query("place_id") String placeId,
+                                          @Query("region") String regionCode,
+                                          @Query("fields") String fields);
+
 }

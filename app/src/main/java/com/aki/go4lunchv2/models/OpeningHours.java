@@ -1,81 +1,59 @@
-
 package com.aki.go4lunchv2.models;
-
-import android.os.Parcel;
-import android.os.Parcelable;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-import java.io.Serializable;
+import java.util.List;
 
-public class OpeningHours implements Serializable, Parcelable
-{
+public class OpeningHours {
 
     @SerializedName("open_now")
     @Expose
-    private boolean openNow;
-    public final static Creator<OpeningHours> CREATOR = new Creator<OpeningHours>() {
+    private Boolean openNow;
+    @SerializedName("periods")
+    @Expose
+    private List<Period> periods = null;
+    @SerializedName("weekday_text")
+    @Expose
+    private List<String> weekdayText = null;
 
-
-        @SuppressWarnings({
-            "unchecked"
-        })
-        public com.aki.go4lunchv2.models.OpeningHours createFromParcel(Parcel in) {
-            return new com.aki.go4lunchv2.models.OpeningHours(in);
-        }
-
-        public com.aki.go4lunchv2.models.OpeningHours[] newArray(int size) {
-            return (new com.aki.go4lunchv2.models.OpeningHours[size]);
-        }
-
-    }
-    ;
-    private final static long serialVersionUID = -598349803154801758L;
-
-    protected OpeningHours(Parcel in) {
-        this.openNow = ((boolean) in.readValue((boolean.class.getClassLoader())));
-    }
-
-    /**
-     * No args constructor for use in serialization
-     * 
-     */
-    public OpeningHours() {
-    }
-
-    /**
-     * 
-     * @param openNow
-     */
-    public OpeningHours(boolean openNow) {
-        super();
-        this.openNow = openNow;
-    }
-
-    public boolean isOpenNow() {
+    public Boolean getOpenNow() {
         return openNow;
     }
 
-    public void setOpenNow(boolean openNow) {
+    public void setOpenNow(Boolean openNow) {
         this.openNow = openNow;
     }
 
-    public com.aki.go4lunchv2.models.OpeningHours withOpenNow(boolean openNow) {
+    public OpeningHours withOpenNow(Boolean openNow) {
         this.openNow = openNow;
         return this;
     }
 
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeValue(openNow);
+    public List<Period> getPeriods() {
+        return periods;
     }
 
-    public int describeContents() {
-        return  0;
+    public void setPeriods(List<Period> periods) {
+        this.periods = periods;
     }
 
-    public String toString() {
-        return (openNow ? "Open" : "Closed");
+    public OpeningHours withPeriods(List<Period> periods) {
+        this.periods = periods;
+        return this;
+    }
+
+    public List<String> getWeekdayText() {
+        return weekdayText;
+    }
+
+    public void setWeekdayText(List<String> weekdayText) {
+        this.weekdayText = weekdayText;
+    }
+
+    public OpeningHours withWeekdayText(List<String> weekdayText) {
+        this.weekdayText = weekdayText;
+        return this;
     }
 
 }

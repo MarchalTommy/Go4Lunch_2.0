@@ -29,9 +29,11 @@ import androidx.navigation.Navigation;
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentMapBinding;
 import com.aki.go4lunchv2.events.FromListToDetailEvent;
+import com.aki.go4lunchv2.events.FromMapToDetailEvent;
 import com.aki.go4lunchv2.events.FromSearchToFragment;
 import com.aki.go4lunchv2.events.MapReadyEvent;
 import com.aki.go4lunchv2.models.Result;
+import com.aki.go4lunchv2.models.ResultDetails;
 import com.aki.go4lunchv2.models.User;
 import com.aki.go4lunchv2.viewmodels.RestaurantViewModel;
 import com.aki.go4lunchv2.viewmodels.UserViewModel;
@@ -89,8 +91,6 @@ public class MapFragment extends Fragment {
         //Init view
         View view = inflater.inflate(R.layout.fragment_map, container, false);
 
-        //Location.distanceBetween();
-
         //Init map fragment
         supportMapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map_frag);
 
@@ -118,7 +118,6 @@ public class MapFragment extends Fragment {
             gMap = googleMap;
 
             EventBus.getDefault().post(new MapReadyEvent(true));
-            Log.d(TAG, "onMapReady: EVENT HAS BEEN POSTED SUCCESSFULLY !");
 
             getLocalRestaurantsData();
             locationUpdates();
@@ -127,8 +126,10 @@ public class MapFragment extends Fragment {
                 restaurantViewModel.getRestaurantFromName(marker.getTitle(), localUser.getLocation(), requireContext()).observe(getViewLifecycleOwner(), new Observer<Result>() {
                     @Override
                     public void onChanged(Result result) {
-                        navController.navigate(R.id.detailFragment);
-                        EventBus.getDefault().postSticky(new FromListToDetailEvent(result));
+                        if (result != null) {
+                            EventBus.getDefault().postSticky(new FromMapToDetailEvent(result));
+                            navController.navigate(R.id.detailFragment);
+                        }
                     }
                 });
                 return false;
@@ -145,17 +146,19 @@ public class MapFragment extends Fragment {
         restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), new Observer<ArrayList<Result>>() {
             @Override
             public void onChanged(ArrayList<Result> results) {
-                for(Result r : results) {
-                    LatLng restaurantLocation = new LatLng(
-                            r.getGeometry().getLocation().getLat(),
-                            r.getGeometry().getLocation().getLng());
+                if (results != null) {
+                    for (Result r : results) {
+                        LatLng restaurantLocation = new LatLng(
+                                r.getGeometry().getLocation().getLat(),
+                                r.getGeometry().getLocation().getLng());
 
-                    MarkerOptions markerOptions = new MarkerOptions();
-                    markerOptions.icon(iconBasic);
-                    markerOptions.title(r.getName());
-                    markerOptions.position(restaurantLocation);
+                        MarkerOptions markerOptions = new MarkerOptions();
+                        markerOptions.icon(iconBasic);
+                        markerOptions.title(r.getName());
+                        markerOptions.position(restaurantLocation);
 
-                    gMap.addMarker(markerOptions);
+                        gMap.addMarker(markerOptions);
+                    }
                 }
             }
         });
@@ -188,8 +191,18 @@ public class MapFragment extends Fragment {
 
     //EVENT TO GET THE SEARCHED RESTAURANT FROM THE AUTOCOMPLETE IN THE ACTIVITY
     @Subscribe
-    public void onRestaurantSearch(FromSearchToFragment event){
-        gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(event.place.getLatLng(), 19));
+    public void onRestaurantSearch(FromSearchToFragment event) {
+        ResultDetails searchResult = new ResultDetails();
+        searchResult = event.result;
+
+        LatLng searchLocation = new LatLng(searchResult.getResult().getGeometry().getLocation().getLat(), searchResult.getResult().getGeometry().getLocation().getLng());
+
+        gMap.addMarker(new MarkerOptions()
+                .position(searchLocation)
+                .title(searchResult.getResult().getName()));
+
+        gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(searchLocation, 19));
+
     }
 
     //-----------------------------------------
@@ -198,7 +211,7 @@ public class MapFragment extends Fragment {
     //-----------------------------------------
 
     /**
-     *SuppressLint because this method is called only AFTER permissions have been acquired
+     * SuppressLint because this method is called only AFTER permissions have been acquired
      */
     @SuppressLint("MissingPermission")
     private void locationUpdates() {

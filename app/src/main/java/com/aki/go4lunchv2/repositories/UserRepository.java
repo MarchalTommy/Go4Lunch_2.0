@@ -106,30 +106,11 @@ public class UserRepository {
         return user;
     }
 
-    public MutableLiveData<List<User>> getUsersOnPlace(String placeName) {
+    public MutableLiveData<List<User>> getUsersOnPlace(String placeId) {
         userList.clear();
-       /* UserHelper.getUsersOnPlace(placeName).addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                task.addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        userList.addAll(queryDocumentSnapshots.toObjects(User.class));
-                        Log.d(TAG, "onSuccess: Userlist fetched with success !\n" + queryDocumentSnapshots.getDocuments().size());
-                    }
-                });
-                task.addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.d(TAG, "Error while retrieving users from a restaurant ->" + e);
-                    }
-                });
-            }
-        });*/
-
         onPlaceUsers.setValue(userList);
 
-        UserHelper.getUserCollection().whereEqualTo("placeBooked", placeName).addSnapshotListener(new EventListener<QuerySnapshot>() {
+        UserHelper.getUserCollection().whereEqualTo("placeBooked", placeId).addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
             public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
                 List<User> userList = new ArrayList<>();

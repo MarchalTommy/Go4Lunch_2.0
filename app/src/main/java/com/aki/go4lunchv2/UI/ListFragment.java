@@ -17,8 +17,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentListBinding;
+import com.aki.go4lunchv2.events.FromAdapterToFragment;
 import com.aki.go4lunchv2.events.FromListToDetailEvent;
+import com.aki.go4lunchv2.events.FromSearchToFragment;
 import com.aki.go4lunchv2.models.Result;
+import com.aki.go4lunchv2.models.ResultDetailed;
+import com.aki.go4lunchv2.models.ResultDetails;
 import com.aki.go4lunchv2.models.User;
 import com.aki.go4lunchv2.viewmodels.RestaurantViewModel;
 import com.aki.go4lunchv2.viewmodels.UserViewModel;
@@ -27,6 +31,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static android.content.ContentValues.TAG;
 
@@ -36,6 +41,7 @@ public class ListFragment extends Fragment {
     UserViewModel userViewModel;
 
     User localUser = User.getInstance();
+    ArrayList<User> allUsers = new ArrayList<>();
 
     ListAdapter adapter;
     NavController navController;
@@ -75,14 +81,13 @@ public class ListFragment extends Fragment {
                 LinearLayoutManager.VERTICAL, false));
         bindings.restaurantsRecyclerView.setAdapter(adapter);
 
-
         restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), new Observer<ArrayList<Result>>() {
             @Override
             public void onChanged(ArrayList<Result> results) {
                 bindings.progressBar.hide();
                 if (results != null) {
                     bindings.noData.setVisibility(View.GONE);
-                    adapter.updateList(results);
+                    adapter.updateList(results, getAllUsers());
                 } else {
                     Log.d(TAG, "onFailure: RESTAURANTS NOT FOUNDS");
                     bindings.noData.setVisibility(View.VISIBLE);
@@ -90,6 +95,17 @@ public class ListFragment extends Fragment {
                 }
             }
         });
+    }
+
+    public ArrayList<User> getAllUsers() {
+        userViewModel.getAllUsers().observe(getViewLifecycleOwner(), new Observer<List<User>>() {
+            @Override
+            public void onChanged(List<User> users) {
+                allUsers.clear();
+                allUsers.addAll(users);
+            }
+        });
+        return allUsers;
     }
 
     @Override
@@ -105,9 +121,40 @@ public class ListFragment extends Fragment {
     }
 
     @Subscribe
-    public void onGettingDetail(FromListToDetailEvent event) {
+    public void onSearchEvent(FromSearchToFragment event) {
+        //TODO : mettre à jour la liste et si click le détail !
+
+        Result result;
+//        result = restaurantViewModel.getRestaurantFromName(event.result.getResult().getPlaceId(), localUser.getLocation(), requireContext()).getValue();
+
+//        result.setName(event.place.getName());
+//        result.setVicinity(event.place.getAddress());
+//        result.setRating((double)event.place.getRating());
+        ArrayList<Result>results = new ArrayList<>();
+//        results.add(result);
+        adapter.updateList(results, getAllUsers());
+    }
+
+    @Subscribe
+    public void onGettingDetail(FromAdapterToFragment event) {
         Log.d(TAG, "onGettingDetail: Event called successfully : \nRestaurant name : " + event.result.getName());
-        navController.navigate(R.id.action_listFragment_to_detailFragment);
-        EventBus.getDefault().postSticky(new FromListToDetailEvent(event.result));
+        ResultDetailed details = new ResultDetailed();
+        restaurantViewModel.getRestaurantDetail(event.result.getPlaceId(), requireContext()).observe(getViewLifecycleOwner(), new Observer<ResultDetails>() {
+            @Override
+            public void onChanged(ResultDetails resultDetails) {
+                if(resultDetails != null) {
+                    details.setFormattedAddress(resultDetails.getResult().getFormattedAddress());
+                    details.setName(resultDetails.getResult().getName());
+                    details.setInternationalPhoneNumber(resultDetails.getResult().getInternationalPhoneNumber());
+                    details.setPhotos(resultDetails.getResult().getPhotos());
+                    details.setRating(resultDetails.getResult().getRating());
+                    details.setUrl(resultDetails.getResult().getUrl());
+
+                    navController.navigate(R.id.action_listFragment_to_detailFragment);
+                    EventBus.getDefault().postSticky(new FromListToDetailEvent(details));
+                }
+            }
+        });
+
     }
 }
