@@ -81,29 +81,23 @@ public class ListFragment extends Fragment {
                 LinearLayoutManager.VERTICAL, false));
         bindings.restaurantsRecyclerView.setAdapter(adapter);
 
-        restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), new Observer<ArrayList<Result>>() {
-            @Override
-            public void onChanged(ArrayList<Result> results) {
-                bindings.progressBar.hide();
-                if (results != null) {
-                    bindings.noData.setVisibility(View.GONE);
-                    adapter.updateList(results, getAllUsers());
-                } else {
-                    Log.d(TAG, "onFailure: RESTAURANTS NOT FOUNDS");
-                    bindings.noData.setVisibility(View.VISIBLE);
-                    bindings.noData.setText(R.string.error_fetching_restaurants);
-                }
+        restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), results -> {
+            bindings.progressBar.hide();
+            if (results != null) {
+                bindings.noData.setVisibility(View.GONE);
+                adapter.updateList(results, getAllUsers());
+            } else {
+                Log.d(TAG, "onFailure: RESTAURANTS NOT FOUNDS");
+                bindings.noData.setVisibility(View.VISIBLE);
+                bindings.noData.setText(R.string.error_fetching_restaurants);
             }
         });
     }
 
     public ArrayList<User> getAllUsers() {
-        userViewModel.getAllUsers().observe(getViewLifecycleOwner(), new Observer<List<User>>() {
-            @Override
-            public void onChanged(List<User> users) {
-                allUsers.clear();
-                allUsers.addAll(users);
-            }
+        userViewModel.getAllUsers().observe(getViewLifecycleOwner(), users -> {
+            allUsers.clear();
+            allUsers.addAll(users);
         });
         return allUsers;
     }
@@ -124,6 +118,9 @@ public class ListFragment extends Fragment {
     public void onSearchEvent(FromSearchToFragment event) {
         //TODO : mettre à jour la liste et si click le détail !
 
+        ResultDetailed resultDetailed = event.result.getResult();
+
+
         Result result;
 //        result = restaurantViewModel.getRestaurantFromName(event.result.getResult().getPlaceId(), localUser.getLocation(), requireContext()).getValue();
 
@@ -139,20 +136,17 @@ public class ListFragment extends Fragment {
     public void onGettingDetail(FromAdapterToFragment event) {
         Log.d(TAG, "onGettingDetail: Event called successfully : \nRestaurant name : " + event.result.getName());
         ResultDetailed details = new ResultDetailed();
-        restaurantViewModel.getRestaurantDetail(event.result.getPlaceId(), requireContext()).observe(getViewLifecycleOwner(), new Observer<ResultDetails>() {
-            @Override
-            public void onChanged(ResultDetails resultDetails) {
-                if(resultDetails != null) {
-                    details.setFormattedAddress(resultDetails.getResult().getFormattedAddress());
-                    details.setName(resultDetails.getResult().getName());
-                    details.setInternationalPhoneNumber(resultDetails.getResult().getInternationalPhoneNumber());
-                    details.setPhotos(resultDetails.getResult().getPhotos());
-                    details.setRating(resultDetails.getResult().getRating());
-                    details.setUrl(resultDetails.getResult().getUrl());
+        restaurantViewModel.getRestaurantDetail(event.result.getPlaceId(), requireContext()).observe(getViewLifecycleOwner(), resultDetails -> {
+            if(resultDetails != null) {
+                details.setFormattedAddress(resultDetails.getResult().getFormattedAddress());
+                details.setName(resultDetails.getResult().getName());
+                details.setInternationalPhoneNumber(resultDetails.getResult().getInternationalPhoneNumber());
+                details.setPhotos(resultDetails.getResult().getPhotos());
+                details.setRating(resultDetails.getResult().getRating());
+                details.setUrl(resultDetails.getResult().getUrl());
 
-                    navController.navigate(R.id.action_listFragment_to_detailFragment);
-                    EventBus.getDefault().postSticky(new FromListToDetailEvent(details));
-                }
+                navController.navigate(R.id.action_listFragment_to_detailFragment);
+                EventBus.getDefault().postSticky(new FromListToDetailEvent(details));
             }
         });
 

@@ -1,10 +1,10 @@
 <resources>
     <string name="app_name">Go4Lunch V2</string>
     <string name="subtitle">Find a nice restaurant and invite your co-workers for lunch!</string>
-    <string name="title">Go4Lunch</string>
+    <string name="title" translatable="false">Go4Lunch</string>
 
 
-    <string name="facebook_app_id">513842192939193</string> <string name="fb_login_protocol_scheme">fb513842192939193</string>
+    <string name="facebook_app_id" translatable="false">513842192939193</string> <string name="fb_login_protocol_scheme" translatable="false">fb513842192939193</string>
     <string name="facebook_application_id" translatable="false">513842192939193</string>
     <string name="facebook_login_protocol_scheme" translatable="false">fb513842192939193</string>
     <string name="login">Login</string>
@@ -15,11 +15,35 @@
     <string name="lunch">YOUR LUNCH</string>
     <string name="settings">SETTINGS</string>
     <string name="logout">LOGOUT</string>
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="navigation_drawer_open" translatable="false">Open navigation drawer</string>
+    <string name="navigation_drawer_close" translatable="false">Close navigation drawer</string>
     <string name="search">Search</string>
     <string name="map_view">Map View</string>
     <string name="list_view">List View</string>
     <string name="workmates">WorkMates</string>
-    <string name="error_fetching_restaurants">An error occured. Please retry later.</string>
+    <string name="error_fetching_restaurants">An error occurred. Please retry later.</string>
+    <string name="location_required">Location permissions are required to use the map view, and for the list to be optimal.</string>
+    <string name="authorize">Authorize</string>
+    <string name="permission_denied">You have refused the permission</string>
+    <string name="settings_menu">Settings</string>
+    <string name="dialog_no">Nope, forget it !</string>
+    <string name="lunch_already_placed">You have already told your workmates that you were eating here !\nDo you really want to cancel your lunch ?</string>
+    <string name="cancel_lunch">Cancel your lunch ?</string>
+    <string name="dialog_yes">Yes !</string>
+    <string name="dialog_yes_2">Yes please !</string>
+    <string name="dialog_no_2">No thanks !</string>
+    <string name="change_lunch">Do you really want to change your lunch place for this restaurant ?</string>
+    <string name="change_lunch_title">Change your lunch ?</string>
+    <string name="no_lunch_yet">You don\'t have any place selected yet !</string>
+    <string name="confirm_settings">Confirm settings</string>
+    <string name="eats_here"> is eating here !</string>
+    <string name="open_now">Open now</string>
+    <string name="closed">Closed</string>
+    <string name="no_info">No info</string>
+    <string name="is_eating_at"> is eating at </string>
+    <string name="not_decided"> hasn\'t decided yet</string>
+    <string name="loading_1">Loading, please wait…</string>
+    <string name="call">Call</string>
+    <string name="like">Like</string>
+    <string name="website">Website</string>
 </resources>

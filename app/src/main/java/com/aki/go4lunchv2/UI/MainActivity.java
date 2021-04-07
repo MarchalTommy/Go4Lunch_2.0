@@ -17,7 +17,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.DialogFragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
@@ -31,7 +30,6 @@ import com.aki.go4lunchv2.events.FromSearchToFragment;
 import com.aki.go4lunchv2.events.MapReadyEvent;
 import com.aki.go4lunchv2.events.YourLunchEvent;
 import com.aki.go4lunchv2.models.Result;
-import com.aki.go4lunchv2.models.ResultDetailed;
 import com.aki.go4lunchv2.models.ResultDetails;
 import com.aki.go4lunchv2.models.User;
 import com.aki.go4lunchv2.viewmodels.RestaurantViewModel;
@@ -53,14 +51,15 @@ import com.google.android.material.snackbar.Snackbar;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import static android.content.ContentValues.TAG;
 
 public class MainActivity extends AppCompatActivity {
 
     //TODO : Gérer YourLunch et les favoris
+    //TODO : Permissions pour appel
     //TODO : Optimiser map éventuellement
 
 
@@ -124,18 +123,13 @@ public class MainActivity extends AppCompatActivity {
     @Subscribe
     public void onMapReadyEvent(MapReadyEvent event) {
         if (event.mapReady) {
-            restaurantViewModel.getRestaurantsAround(localUser.getLocation(), this).observe(this, new Observer<ArrayList<Result>>() {
-                @Override
-                public void onChanged(ArrayList<Result> results) {
-                    if (results != null) {
-                        restaurantViewModel.setRestaurantsAround(results);
-                        mainBinding.mainProgressBar.hide();
-                        mainBinding.bottomNavView.setVisibility(View.VISIBLE);
-                        mainBinding.toolbar.setVisibility(View.VISIBLE);
-                        updateUi();
-                    } else {
-                        Snackbar.make(mainBinding.getRoot(), "Loading data...", BaseTransientBottomBar.LENGTH_INDEFINITE).show();
-                    }
+            restaurantViewModel.getRestaurantsAround(localUser.getLocation(), this).observe(this, results -> {
+                if (results != null) {
+                    restaurantViewModel.setRestaurantsAround(results);
+                    mainBinding.mainProgressBar.hide();
+                    mainBinding.bottomNavView.setVisibility(View.VISIBLE);
+                    mainBinding.toolbar.setVisibility(View.VISIBLE);
+                    updateUi();
                 }
             });
         }
@@ -226,13 +220,10 @@ public class MainActivity extends AppCompatActivity {
             Place place = Autocomplete.getPlaceFromIntent(data);
             ResultDetails restaurantWithDetail = new ResultDetails();
 
-            restaurantViewModel.getRestaurantDetail(place.getId(), getApplicationContext()).observe(this, new Observer<ResultDetails>() {
-                @Override
-                public void onChanged(ResultDetails resultDetails) {
-                    if (resultDetails != null) {
-                        restaurantWithDetail.setResult(resultDetails.getResult());
-                        EventBus.getDefault().post(new FromSearchToFragment(restaurantWithDetail));
-                    }
+            restaurantViewModel.getRestaurantDetail(place.getId(), getApplicationContext()).observe(this, resultDetails -> {
+                if (resultDetails != null) {
+                    restaurantWithDetail.setResult(resultDetails.getResult());
+                    EventBus.getDefault().post(new FromSearchToFragment(restaurantWithDetail));
                 }
             });
         }
@@ -241,31 +232,25 @@ public class MainActivity extends AppCompatActivity {
     public void lunchClick() {
         if (localUser != null) {
             if (localUser.getHasBooked()) {
-                restaurantViewModel.getRestaurantFromName(localUser.getPlaceBooked(), localUser.getLocation(), this.getApplicationContext()).observe(this, new Observer<Result>() {
-                    @Override
-                    public void onChanged(Result result) {
-                        if (result != null) {
-                            Log.d(TAG, "onChanged: result found !" + result.getPlaceId());
-                            getDetails(result);
-                        }
+                restaurantViewModel.getRestaurantFromName(localUser.getPlaceBooked(), localUser.getLocation(), this.getApplicationContext()).observe(this, result -> {
+                    if (result != null) {
+                        Log.d(TAG, "onChanged: result found !" + result.getPlaceId());
+                        getDetails(result);
                     }
                 });
             } else {
-                Snackbar.make(mainBinding.getRoot(), "You don't have any place selected yet !", BaseTransientBottomBar.LENGTH_LONG).show();
+                Snackbar.make(mainBinding.getRoot(), getString(R.string.no_lunch_yet), BaseTransientBottomBar.LENGTH_LONG).show();
             }
         }
     }
 
     public void getDetails(Result result) {
-        restaurantViewModel.getRestaurantDetail(result.getPlaceId(), getApplicationContext()).observe(MainActivity.this, new Observer<ResultDetails>() {
-            @Override
-            public void onChanged(ResultDetails resultDetails) {
-                if(resultDetails != null) {
-                    EventBus.getDefault().postSticky(new YourLunchEvent(resultDetails));
-                    mainBinding.toolbar.setVisibility(View.GONE);
-                    mainBinding.drawerLayout.closeDrawer(GravityCompat.START);
-                    navController.navigate(R.id.detailFragment);
-                }
+        restaurantViewModel.getRestaurantDetail(result.getPlaceId(), getApplicationContext()).observe(MainActivity.this, resultDetails -> {
+            if(resultDetails != null) {
+                EventBus.getDefault().postSticky(new YourLunchEvent(resultDetails));
+                mainBinding.toolbar.setVisibility(View.GONE);
+                mainBinding.drawerLayout.closeDrawer(GravityCompat.START);
+                navController.navigate(R.id.detailFragment);
             }
         });
     }
@@ -281,7 +266,7 @@ public class MainActivity extends AppCompatActivity {
 
             builder.setView(view)
                     .setCancelable(true)
-                    .setNeutralButton("Confirm settings", (dialogInterface, i) -> {
+                    .setNeutralButton(getString(R.string.confirm_settings), (dialogInterface, i) -> {
                         if (binding.notificationSwitch.isEnabled()) {
                             //TODO : activer notifications
                         } else {

@@ -1,5 +1,6 @@
 package com.aki.go4lunchv2.UI;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.icu.util.GregorianCalendar;
@@ -78,6 +79,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.RestaurantView
             binding = RestaurantsRecyclerviewItemBinding.bind(view);
         }
 
+        @SuppressLint("SetTextI18n")
         public void bind(Result result) {
             if (result != null) {
 
@@ -105,14 +107,14 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.RestaurantView
                 //Opening time binding
                 if (result.getOpeningHours() != null) {
                     if (result.getOpeningHours().getOpenNow()) {
-                        binding.restaurantTime.setText("Open now");
+                        binding.restaurantTime.setText(R.string.open_now);
                         binding.restaurantTime.setTextColor(Color.parseColor("#525252"));
                     } else {
-                        binding.restaurantTime.setText("Closed");
+                        binding.restaurantTime.setText(R.string.closed);
                         binding.restaurantTime.setTextColor(Color.RED);
                     }
                 } else {
-                    binding.restaurantTime.setText("No info");
+                    binding.restaurantTime.setText(R.string.no_info);
                 }
 
                 //Address binding

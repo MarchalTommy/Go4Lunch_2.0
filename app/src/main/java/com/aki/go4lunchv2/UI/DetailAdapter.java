@@ -64,7 +64,7 @@ public class DetailAdapter extends RecyclerView.Adapter<DetailAdapter.DetailView
 
         public void bind(User user) {
 
-            binding.restaurantDetailWorkmateText.setText(user.getUsername() + " is eating here !");
+            binding.restaurantDetailWorkmateText.setText(new StringBuilder().append(user.getUsername()).append(context.getString(R.string.eats_here)).toString());
 
             Glide.with(context)
                     .load(user.getUrlPicture())

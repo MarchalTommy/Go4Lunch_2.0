@@ -71,9 +71,17 @@ public class WorkmatesAdapter extends RecyclerView.Adapter<WorkmatesAdapter.Work
 
             //Name and lunch
             if (user.getHasBooked()) {
-                binding.workmatesNameAndLunch.setText(user.getUsername() + " is eating at " + user.getPlaceBooked() + " ");
+                binding.workmatesNameAndLunch.setText(new StringBuilder()
+                        .append(user.getUsername())
+                        .append(" ")
+                        .append(context.getString(R.string.is_eating_at))
+                        .append(" ")
+                        .append(user.getPlaceBooked()));
             } else {
-                binding.workmatesNameAndLunch.setText(user.getUsername() + " hasn't decided yet");
+                binding.workmatesNameAndLunch.setText(new StringBuilder()
+                        .append(user.getUsername())
+                        .append(" ")
+                        .append(context.getString(R.string.not_decided)));
                 binding.workmatesNameAndLunch.setTextColor(Color.parseColor("#B3B3B3"));
             }
         }

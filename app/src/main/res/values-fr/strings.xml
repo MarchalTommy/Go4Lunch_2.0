@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Go4Lunch V2</string>
+    <string name="subtitle">Trouvez un bon restaurant et invitez vos collègues !</string>
+    <string name="login">Connection</string>
+    <string name="welcome_back">Bon retour !</string>
+    <string name="error_unknown_error">Une erreur inconnue s\'est produite…</string>
+    <string name="auth_canceled">L\'autentification à été annulée…</string>
+    <string name="error_no_internet">Aucune connexion réseau…</string>
+    <string name="lunch">VOTRE REPAS</string>
+    <string name="settings">PARAMETRES</string>
+    <string name="logout">DECONNEXION</string>
+    <string name="search">Rechercher</string>
+    <string name="map_view">Vue Carte</string>
+    <string name="list_view">Vue Liste</string>
+    <string name="workmates">Collègues</string>
+    <string name="error_fetching_restaurants">Une erreur est survenue. Réessayez plus tard.</string>
+    <string name="location_required">La permission de localisation est nécessaire pour le fonctionnement de l\'app</string>
+    <string name="authorize">Autoriser</string>
+    <string name="permission_denied">Vous avez refusé la permission</string>
+    <string name="settings_menu">Paramètres</string>
+    <string name="dialog_no">Non, oubliez ça !</string>
+    <string name="lunch_already_placed">Vous avez déjà prévenu vos collègues que vous mangiez ici ! Voulez vous vraiment annuler ?</string>
+    <string name="cancel_lunch">Annuler votre repas ?</string>
+    <string name="dialog_yes">Oui !</string>
+    <string name="dialog_yes_2">Volontiers !</string>
+    <string name="dialog_no_2">Non merci !</string>
+    <string name="change_lunch">Voulez vous vraiment changer votre repas pour ce restaurant ?</string>
+    <string name="change_lunch_title">Changer votre restaurant ?</string>
+    <string name="no_lunch_yet">Vous n\'avez aucun restaurant de séléctionné pour l\'instant !</string>
+    <string name="confirm_settings">Confirmer les réglages</string>
+    <string name="eats_here">mange ici !</string>
+    <string name="open_now">Ouvert</string>
+    <string name="closed">Fermé</string>
+    <string name="no_info">Pas d\'information</string>
+    <string name="is_eating_at">mange chez</string>
+    <string name="not_decided">n\'a pas encore décidé</string>
+    <string name="loading_1">Chargement, veuillez patienter…</string>
+    <string name="call">Appeler</string>
+    <string name="like">Liker</string>
+    <string name="website">Site Web</string>
+</resources>

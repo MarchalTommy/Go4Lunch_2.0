@@ -52,12 +52,7 @@ public class WorkmatesFragment extends Fragment {
         binding.workmatesRecyclerView.setAdapter(adapter);
 
         //Observing LiveData to populate RV
-        userViewModel.getAllUsers().observe(this.getActivity(), new Observer<List<User>>() {
-            @Override
-            public void onChanged(List<User> users) {
-                adapter.updateList(users);
-            }
-        });
+        userViewModel.getAllUsers().observe(this.getActivity(), users -> adapter.updateList(users));
     }
 
     @Override

@@ -13,8 +13,6 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.core.content.res.ResourcesCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -25,9 +23,7 @@ import com.aki.go4lunchv2.databinding.FragmentRestaurantDetailBinding;
 import com.aki.go4lunchv2.events.FromListToDetailEvent;
 import com.aki.go4lunchv2.events.FromMapToDetailEvent;
 import com.aki.go4lunchv2.events.YourLunchEvent;
-import com.aki.go4lunchv2.models.Result;
 import com.aki.go4lunchv2.models.ResultDetailed;
-import com.aki.go4lunchv2.models.ResultDetails;
 import com.aki.go4lunchv2.models.User;
 import com.aki.go4lunchv2.viewmodels.UserViewModel;
 import com.bumptech.glide.Glide;
@@ -185,29 +181,29 @@ public class DetailFragment extends Fragment {
     private void FABAlertDialog(int c) {
         switch (c) {
             case 1:
-                AlertDialog dialogBuilder = new MaterialAlertDialogBuilder(context)
-                        .setPositiveButton("Yes !", (dialogInterface, i) -> {
+                new MaterialAlertDialogBuilder(context)
+                        .setPositiveButton(getString(R.string.dialog_yes), (dialogInterface, i) -> {
                             //Updating data for the UI
                             userViewModel.updateHasBooked(false);
                             userViewModel.updatePlaceBooked("");
                             updateAdapter();
                             DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.black));
                         })
-                        .setNegativeButton("Nope, forget it !", (dialogInterface, i) -> dialogInterface.dismiss())
-                        .setMessage("You have already told your workmates that you were eating here !\nDo you really want to cancel your lunch ?").setTitle("Cancel your lunch ?")
+                        .setNegativeButton(getString(R.string.dialog_no), (dialogInterface, i) -> dialogInterface.dismiss())
+                        .setMessage(getString(R.string.lunch_already_placed)).setTitle(getString(R.string.cancel_lunch))
                         .show();
                 break;
             case 2:
-                AlertDialog dialogBuilder2 = new MaterialAlertDialogBuilder(context)
-                        .setPositiveButton("Yes please !", (dialogInterface, i) -> {
+                new MaterialAlertDialogBuilder(context)
+                        .setPositiveButton(getString(R.string.dialog_yes_2), (dialogInterface, i) -> {
 
                             //Updating data for the UI
                             userViewModel.updatePlaceBooked(restaurantDetail.getName());
                             updateAdapter();
                             DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.secondaryColor));
                         })
-                        .setNegativeButton("No thanks !", (dialogInterface, i) -> dialogInterface.dismiss())
-                        .setMessage("Do you really want to change your lunch place for this restaurant ?").setTitle("Change your lunch ?")
+                        .setNegativeButton(getString(R.string.dialog_no_2), (dialogInterface, i) -> dialogInterface.dismiss())
+                        .setMessage(getString(R.string.change_lunch)).setTitle(getString(R.string.change_lunch_title))
                         .show();
                 break;
         }

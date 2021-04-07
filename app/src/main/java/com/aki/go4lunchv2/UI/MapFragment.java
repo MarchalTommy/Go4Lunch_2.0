@@ -123,13 +123,10 @@ public class MapFragment extends Fragment {
             locationUpdates();
 
             googleMap.setOnMarkerClickListener(marker -> {
-                restaurantViewModel.getRestaurantFromName(marker.getTitle(), localUser.getLocation(), requireContext()).observe(getViewLifecycleOwner(), new Observer<Result>() {
-                    @Override
-                    public void onChanged(Result result) {
-                        if (result != null) {
-                            EventBus.getDefault().postSticky(new FromMapToDetailEvent(result));
-                            navController.navigate(R.id.detailFragment);
-                        }
+                restaurantViewModel.getRestaurantFromName(marker.getTitle(), localUser.getLocation(), requireContext()).observe(getViewLifecycleOwner(), result -> {
+                    if (result != null) {
+                        EventBus.getDefault().postSticky(new FromMapToDetailEvent(result));
+                        navController.navigate(R.id.detailFragment);
                     }
                 });
                 return false;
@@ -143,22 +140,19 @@ public class MapFragment extends Fragment {
         Bitmap bitmap;
         BitmapDescriptor iconLunchHere = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
 
-        restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), new Observer<ArrayList<Result>>() {
-            @Override
-            public void onChanged(ArrayList<Result> results) {
-                if (results != null) {
-                    for (Result r : results) {
-                        LatLng restaurantLocation = new LatLng(
-                                r.getGeometry().getLocation().getLat(),
-                                r.getGeometry().getLocation().getLng());
+        restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), results -> {
+            if (results != null) {
+                for (Result r : results) {
+                    LatLng restaurantLocation = new LatLng(
+                            r.getGeometry().getLocation().getLat(),
+                            r.getGeometry().getLocation().getLng());
 
-                        MarkerOptions markerOptions = new MarkerOptions();
-                        markerOptions.icon(iconBasic);
-                        markerOptions.title(r.getName());
-                        markerOptions.position(restaurantLocation);
+                    MarkerOptions markerOptions = new MarkerOptions();
+                    markerOptions.icon(iconBasic);
+                    markerOptions.title(r.getName());
+                    markerOptions.position(restaurantLocation);
 
-                        gMap.addMarker(markerOptions);
-                    }
+                    gMap.addMarker(markerOptions);
                 }
             }
         });
@@ -192,8 +186,7 @@ public class MapFragment extends Fragment {
     //EVENT TO GET THE SEARCHED RESTAURANT FROM THE AUTOCOMPLETE IN THE ACTIVITY
     @Subscribe
     public void onRestaurantSearch(FromSearchToFragment event) {
-        ResultDetails searchResult = new ResultDetails();
-        searchResult = event.result;
+        ResultDetails searchResult = event.result;
 
         LatLng searchLocation = new LatLng(searchResult.getResult().getGeometry().getLocation().getLat(), searchResult.getResult().getGeometry().getLocation().getLng());
 
@@ -277,9 +270,9 @@ public class MapFragment extends Fragment {
 
     private void explainPermissions() {
         Snackbar.make(mapBinding.layoutMapFragment,
-                "Location permissions are required to use the map view, and for the list to be optimal.",
+                getActivity().getResources().getString(R.string.location_required),
                 BaseTransientBottomBar.LENGTH_INDEFINITE)
-                .setAction("Authorize", view -> askPermissions())
+                .setAction(getString(R.string.authorize), view -> askPermissions())
                 .show();
     }
 
@@ -288,8 +281,8 @@ public class MapFragment extends Fragment {
     }
 
     private void displayOptions() {
-        Snackbar.make(mapBinding.layoutMapFragment, "You have refused the permission", BaseTransientBottomBar.LENGTH_LONG)
-                .setAction("Settings", view -> {
+        Snackbar.make(mapBinding.layoutMapFragment, getString(R.string.permission_denied), BaseTransientBottomBar.LENGTH_LONG)
+                .setAction(getString(R.string.settings_menu), view -> {
                     final Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                     final Uri uri = Uri.fromParts("package", requireActivity().getPackageName(), null);
                     intent.setData(uri);

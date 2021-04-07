@@ -18,7 +18,7 @@ public class UserViewModel extends ViewModel {
     //REPOSITORY
     private final UserRepository userRepository = new UserRepository();
 
-    private MutableLiveData<User> user = new MutableLiveData<>();
+    private final MutableLiveData<User> user = new MutableLiveData<>();
 
     //GETTING DATA
     public LiveData<User> getCurrentUser() {
@@ -31,11 +31,6 @@ public class UserViewModel extends ViewModel {
 
     public MutableLiveData<List<User>> getAllUsers() {
         return userRepository.getAllUsers();
-    }
-
-    public MutableLiveData<User> getUserById(String uid) {
-        user.setValue(userRepository.getUser(uid));
-        return user;
     }
 
     public MutableLiveData<List<User>> getUsersOnPlace(String placeId) {
@@ -61,10 +56,6 @@ public class UserViewModel extends ViewModel {
 
     public void deleteUser() {
         userRepository.deleteUser(getCurrentFirebaseUser().getUid());
-    }
-
-    public void updateUsername(String username) {
-        userRepository.updateUsername(username, getCurrentFirebaseUser().getUid());
     }
 
     public void updateHasBooked(Boolean hasBooked) {
