@@ -1,10 +1,16 @@
 package com.aki.go4lunchv2.UI;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +19,8 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -28,6 +36,8 @@ import com.aki.go4lunchv2.models.User;
 import com.aki.go4lunchv2.viewmodels.UserViewModel;
 import com.bumptech.glide.Glide;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.BaseTransientBottomBar;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -38,6 +48,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static android.content.ContentValues.TAG;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 public class DetailFragment extends Fragment {
 
@@ -51,6 +62,7 @@ public class DetailFragment extends Fragment {
     User localUser = User.getInstance();
 
     //Listener
+    //Floating action button
     private final OnClickListener fabListener = new OnClickListener() {
         @Override
         public void onClick(View view) {
@@ -67,13 +79,35 @@ public class DetailFragment extends Fragment {
             }
         }
     };
-    @SuppressLint("NonConstantResourceId")
+    //Button bar (call, like, website)
+    @SuppressLint({"NonConstantResourceId", "NewApi", "UseCompatTextViewDrawableApis"})
     private final OnClickListener callLikeWebsiteListener = view -> {
         switch (view.getId()) {
             case R.id.call_btn:
-                startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + restaurantDetail.getInternationalPhoneNumber())));
+                callPermission();
                 break;
             case R.id.like_btn:
+                if(localUser.getPlaceLiked().contains(restaurantDetail.getPlaceId())){
+                    // Updating local user info
+                    localUser.removePlaceLiked(restaurantDetail.getPlaceId());
+                    // Updating the UI
+                    bindings.likeBtn.setText(R.string.not_liked);
+                    bindings.likeBtn.setTextColor(getResources().getColor(R.color.primaryColor));
+                    Drawable[] drawables = bindings.likeBtn.getCompoundDrawables();
+                    if (drawables[1] != null) {  // top drawable is 1
+                        drawables[1].setColorFilter(getResources().getColor(R.color.primaryColor), PorterDuff.Mode.MULTIPLY);
+                    }
+                } else {
+                    // Updating local user info
+                    localUser.addPlaceLiked(restaurantDetail.getPlaceId());
+                    // Updating the UI
+                    bindings.likeBtn.setText(R.string.liked);
+                    bindings.likeBtn.setTextColor(getResources().getColor(R.color.secondaryDarkColor));
+                    Drawable[] drawables = bindings.likeBtn.getCompoundDrawables();
+                    if (drawables[1] != null) {  // top drawable is 1
+                        drawables[1].setColorFilter(getResources().getColor(R.color.secondaryDarkColor), PorterDuff.Mode.MULTIPLY);
+                    }
+                }
                 break;
             case R.id.website_btn:
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(restaurantDetail.getUrl())));
@@ -85,7 +119,6 @@ public class DetailFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         context = this.getContext();
-        //sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
     }
 
@@ -102,12 +135,22 @@ public class DetailFragment extends Fragment {
         EventBus.getDefault().unregister(this);
     }
 
+    // I made it this way to prevent the app from updating each time the FAB is clicked.
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        localUser.setHasBooked(Objects.requireNonNull(userViewModel.getCurrentUser().getValue()).getHasBooked());
+        localUser.setPlaceBooked(userViewModel.getCurrentUser().getValue().getPlaceBooked());
+        userViewModel.updatePlaceLiked(localUser.getPlaceLiked());
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_restaurant_detail, container, false);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -127,6 +170,7 @@ public class DetailFragment extends Fragment {
 
     }
 
+    //Initiating the workmates eating here adapter
     private void initAdapter() {
         adapter = new DetailAdapter(context);
         bindings.detailRecyclerview.setLayoutManager(new LinearLayoutManager(this.getContext(), LinearLayoutManager.VERTICAL, false));
@@ -146,18 +190,12 @@ public class DetailFragment extends Fragment {
 
     }
 
+    //Updating the adapter
     private void updateAdapter(){
         userViewModel.getUsersOnPlace(restaurantDetail.getName()).observe(getViewLifecycleOwner(), users -> adapter.updateList(users));
     }
 
-    // I made it this way to prevent the app from updating each time the FAB is clicked.
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        localUser.setHasBooked(Objects.requireNonNull(userViewModel.getCurrentUser().getValue()).getHasBooked());
-        localUser.setPlaceBooked(userViewModel.getCurrentUser().getValue().getPlaceBooked());
-    }
-
+    // Getting the last known data from the ViewModel (mainly for the floating button and like button)
     private void getDataFromViewModel() {
         //Getting current user
         userViewModel.getCurrentUser().observe(getViewLifecycleOwner(), user -> {
@@ -175,9 +213,27 @@ public class DetailFragment extends Fragment {
             } else {
                 DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.black));
             }
+
+            //Like button design (green when place is liked, orange otherwise)
+            if(localUser.getPlaceLiked().contains(restaurantDetail.getPlaceId())){
+                bindings.likeBtn.setText(R.string.liked);
+                bindings.likeBtn.setTextColor(getResources().getColor(R.color.secondaryDarkColor));
+                Drawable[] drawables = bindings.likeBtn.getCompoundDrawables();
+                if (drawables[1] != null) {  // top drawable is 1
+                    drawables[1].setColorFilter(getResources().getColor(R.color.secondaryDarkColor), PorterDuff.Mode.MULTIPLY);
+                }
+            } else {
+                bindings.likeBtn.setText(R.string.not_liked);
+                bindings.likeBtn.setTextColor(getResources().getColor(R.color.primaryColor));
+                Drawable[] drawables = bindings.likeBtn.getCompoundDrawables();
+                if (drawables[1] != null) {  // top drawable is 1
+                    drawables[1].setColorFilter(getResources().getColor(R.color.primaryColor), PorterDuff.Mode.MULTIPLY);
+                }
+            }
         });
     }
 
+    // AlertDialog for the different use case of the floating button
     private void FABAlertDialog(int c) {
         switch (c) {
             case 1:
@@ -209,6 +265,7 @@ public class DetailFragment extends Fragment {
         }
     }
 
+    //Updating UI with restaurant information
     public void updateRestaurantUI(ResultDetailed restaurant) {
         //Rating
         bindings.detailRatingBar.setNumStars(3);
@@ -252,6 +309,7 @@ public class DetailFragment extends Fragment {
         }
     }
 
+    // Event from the menu (Your Lunch button)
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     public void fromMenu(YourLunchEvent event){
         //Initializing the restaurant to be able to receive the data
@@ -262,6 +320,7 @@ public class DetailFragment extends Fragment {
         EventBus.getDefault().removeStickyEvent(this);
     }
 
+    // Event from the list
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     public void fromList(FromListToDetailEvent event) {
         //Initializing the restaurant to be able to receive the data
@@ -273,9 +332,68 @@ public class DetailFragment extends Fragment {
         EventBus.getDefault().removeStickyEvent(this);
     }
 
+    // Event from the map
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     public void fromMap(FromMapToDetailEvent event) {
+        restaurantDetail = event.result;
 
+        updateRestaurantUI(restaurantDetail);
+
+        EventBus.getDefault().removeStickyEvent(this);
+    }
+
+    //------------------------------
+    //   PERMISSION FOR CALLING
+    //------------------------------
+
+    public void callPermission() {
+        if(ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.CALL_PHONE) != PERMISSION_GRANTED) {
+            if(shouldShowRequestPermissionRationale(Manifest.permission.CALL_PHONE)) {
+                explainPermission();
+            } else {
+                askPermission();
+            }
+        } else {
+            startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + restaurantDetail.getInternationalPhoneNumber())));
+        }
+    }
+
+    private void explainPermission() {
+        Snackbar.make(getView(),
+                getString(R.string.call_permission_explained),
+                BaseTransientBottomBar.LENGTH_INDEFINITE)
+                .setAction(getString(R.string.authorize), view -> askPermission())
+                .show();
+    }
+
+    private void askPermission() {
+        requestPermissions(new String[]{Manifest.permission.CALL_PHONE}, 1);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == 1) {
+            if (grantResults[0] == PERMISSION_GRANTED) {
+                //MAKE THE PHONE CALL, IT MEANS PERMISSION IS GRANTED
+                startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + restaurantDetail.getInternationalPhoneNumber())));
+            } else if (!shouldShowRequestPermissionRationale(permissions[0]) && !shouldShowRequestPermissionRationale(permissions[1])) {
+                displayOptions();
+            } else {
+                explainPermission();
+            }
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    private void displayOptions() {
+        Snackbar.make(getView(), getString(R.string.permission_denied), BaseTransientBottomBar.LENGTH_LONG)
+                .setAction(getString(R.string.settings_menu), view -> {
+                    final Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    final Uri uri = Uri.fromParts("package", requireActivity().getPackageName(), null);
+                    intent.setData(uri);
+                    startActivity(intent);
+                })
+                .show();
     }
 }
 

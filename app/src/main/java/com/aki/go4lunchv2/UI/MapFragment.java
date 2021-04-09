@@ -21,14 +21,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentMapBinding;
-import com.aki.go4lunchv2.events.FromListToDetailEvent;
 import com.aki.go4lunchv2.events.FromMapToDetailEvent;
 import com.aki.go4lunchv2.events.FromSearchToFragment;
 import com.aki.go4lunchv2.events.MapReadyEvent;
@@ -56,8 +54,6 @@ import com.google.android.material.snackbar.Snackbar;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
-
-import java.util.ArrayList;
 
 import static android.content.ContentValues.TAG;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
@@ -123,16 +119,26 @@ public class MapFragment extends Fragment {
             locationUpdates();
 
             googleMap.setOnMarkerClickListener(marker -> {
-                restaurantViewModel.getRestaurantFromName(marker.getTitle(), localUser.getLocation(), requireContext()).observe(getViewLifecycleOwner(), result -> {
-                    if (result != null) {
-                        EventBus.getDefault().postSticky(new FromMapToDetailEvent(result));
-                        navController.navigate(R.id.detailFragment);
-                    }
-                });
+                restaurantViewModel.getRestaurantFromName(marker.getTitle(), localUser.getLocation(), requireContext())
+                        .observe(getViewLifecycleOwner(), result -> {
+                            if (result != null) {
+                                getRestaurantDetails(result);
+                            }
+                        });
                 return false;
             });
 
         });
+    }
+
+    private void getRestaurantDetails(Result result) {
+        restaurantViewModel.getRestaurantDetail(result.getPlaceId(), requireContext())
+                .observe(getViewLifecycleOwner(), resultDetails -> {
+                    if (resultDetails != null) {
+                        EventBus.getDefault().postSticky(new FromMapToDetailEvent(resultDetails.getResult()));
+                        navController.navigate(R.id.detailFragment);
+                    }
+                });
     }
 
     private void getLocalRestaurantsData() {
@@ -148,7 +154,11 @@ public class MapFragment extends Fragment {
                             r.getGeometry().getLocation().getLng());
 
                     MarkerOptions markerOptions = new MarkerOptions();
-                    markerOptions.icon(iconBasic);
+                    if(localUser.getPlaceBooked().equals(r.getName())){
+                        markerOptions.icon(iconLunchHere);
+                    } else {
+                        markerOptions.icon(iconBasic);
+                    }
                     markerOptions.title(r.getName());
                     markerOptions.position(restaurantLocation);
 

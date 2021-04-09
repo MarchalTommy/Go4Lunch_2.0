@@ -11,6 +11,7 @@ import com.aki.go4lunchv2.repositories.UserRepository;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserViewModel extends ViewModel {
@@ -64,5 +65,9 @@ public class UserViewModel extends ViewModel {
 
     public void updatePlaceBooked(String placeBooked) {
         userRepository.updatePlaceBooked(placeBooked, getCurrentFirebaseUser().getUid());
+    }
+
+    public void updatePlaceLiked(ArrayList<String> placeLiked) {
+        userRepository.updatePlaceLiked(placeLiked, getCurrentFirebaseUser().getUid());
     }
 }

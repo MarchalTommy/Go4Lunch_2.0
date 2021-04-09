@@ -47,6 +47,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.auth.FirebaseAuth;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -62,20 +63,22 @@ public class MainActivity extends AppCompatActivity {
     //TODO : Permissions pour appel
     //TODO : Optimiser map éventuellement
 
-
+    // VAR
     UserViewModel userViewModel;
     RestaurantViewModel restaurantViewModel;
+    NavController navController;
     User localUser = User.getInstance();
-    Result chosenRestaurant = new Result();
+
     // BINDINGS
     ActivityMainBinding mainBinding;
     NavHeaderBinding headerBinding;
     SettingsDialogBinding settingsBinding;
-    NavController navController;
+
     // UI
     private DrawerLayout drawer;
 
     // Listeners
+    //Drawer Listener
     @SuppressLint("NonConstantResourceId")
     private final NavigationView.OnNavigationItemSelectedListener drawerListener =
             item -> {
@@ -93,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 return true;
             };
+    //Menu Listener (Places Autocomplete
     private final MenuItem.OnMenuItemClickListener searchListener =
             menuItem -> {
                 List<Place.Field> fieldList = Arrays.asList(Place.Field.NAME, Place.Field.ID);
@@ -108,32 +112,22 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             };
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        EventBus.getDefault().register(this);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        EventBus.getDefault().unregister(this);
-    }
-
-    @Subscribe
-    public void onMapReadyEvent(MapReadyEvent event) {
-        if (event.mapReady) {
-            restaurantViewModel.getRestaurantsAround(localUser.getLocation(), this).observe(this, results -> {
-                if (results != null) {
-                    restaurantViewModel.setRestaurantsAround(results);
-                    mainBinding.mainProgressBar.hide();
-                    mainBinding.bottomNavView.setVisibility(View.VISIBLE);
-                    mainBinding.toolbar.setVisibility(View.VISIBLE);
-                    updateUi();
-                }
-            });
+    //When click on the "Your Lunch" button in the drawer
+    public void lunchClick() {
+        if (localUser != null) {
+            if (localUser.getHasBooked()) {
+                restaurantViewModel.getRestaurantFromName(localUser.getPlaceBooked(), localUser.getLocation(), this.getApplicationContext()).observe(this, result -> {
+                    if (result != null) {
+                        Log.d(TAG, "onChanged: result found !" + result.getPlaceId());
+                        getDetails(result);
+                    }
+                });
+            } else {
+                Snackbar.make(mainBinding.getRoot(), getString(R.string.no_lunch_yet), BaseTransientBottomBar.LENGTH_LONG).show();
+            }
         }
     }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -148,21 +142,27 @@ public class MainActivity extends AppCompatActivity {
         if (userViewModel.getCurrentFirebaseUser() != null) {
             mainBinding.mainProgressBar.show();
             userViewModel.getCurrentUser().observe(this, user -> {
+                if(user != null) {
+                    if(user.getUsername() != null) {
+                        localUser.setUsername(user.getUsername());
+                    } else {
+                        localUser.setUsername(FirebaseAuth.getInstance().getCurrentUser().getDisplayName());
+                    }
+                    localUser.setPlaceBooked(user.getPlaceBooked());
+                    localUser.setHasBooked(user.getHasBooked());
+                    localUser.setLocation(user.getLocation());
+                    localUser.setPlaceLiked(user.getPlaceLiked());
 
-                localUser.setUsername(user.getUsername());
-                localUser.setPlaceBooked(user.getPlaceBooked());
-                localUser.setHasBooked(user.getHasBooked());
-                localUser.setLocation(user.getLocation());
-
-                mainBinding.mainProgressBar.hide();
-                mainBinding.bottomNavView.setVisibility(View.VISIBLE);
-                mainBinding.toolbar.setVisibility(View.VISIBLE);
-                updateUi();
+                    mainBinding.mainProgressBar.hide();
+                    mainBinding.bottomNavView.setVisibility(View.VISIBLE);
+                    mainBinding.toolbar.setVisibility(View.VISIBLE);
+                    updateUi();
+                }
             });
         } else {
+            navController.navigate(R.id.loginFragment);
             mainBinding.bottomNavView.setVisibility(View.GONE);
             mainBinding.toolbar.setVisibility(View.GONE);
-            navController.navigate(R.id.loginFragment);
         }
 
         NavigationView navView = mainBinding.navView;
@@ -171,10 +171,24 @@ public class MainActivity extends AppCompatActivity {
         setContentView(mainBinding.getRoot());
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        EventBus.getDefault().unregister(this);
+    }
+
+    //Places initialization
     private void places() {
         Places.initialize(getApplicationContext(), getResources().getString(R.string.GOOGLE_MAPS_API_KEY));
     }
 
+    //Navigation Setup
     private void NavigationSetup() {
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
         if (navHostFragment != null) {
@@ -183,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //Updating the UI with all the information
     public void updateUi() {
         Toolbar toolbar = mainBinding.toolbar;
         toolbar.setTitle("I'm Hungry !");
@@ -198,21 +213,58 @@ public class MainActivity extends AppCompatActivity {
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        Glide.with(this)
-                .load(userViewModel.getCurrentFirebaseUser().getPhotoUrl())
-                .apply(RequestOptions.circleCropTransform())
-                .into(headerBinding.profilePic);
+        if(userViewModel.getCurrentFirebaseUser().getPhotoUrl() != null) {
+            Glide.with(this)
+                    .load(userViewModel.getCurrentFirebaseUser().getPhotoUrl())
+                    .apply(RequestOptions.circleCropTransform())
+                    .into(headerBinding.profilePic);
+        } else {
+            Glide.with(this)
+                    .load(R.drawable.fui_ic_anonymous_white_24dp)
+                    .apply(RequestOptions.circleCropTransform())
+                    .into(headerBinding.profilePic);
+        }
 
-        headerBinding.username.setText(localUser.getUsername());
+        headerBinding.username.setText(userViewModel.getCurrentFirebaseUser().getDisplayName());
         headerBinding.usermail.setText(userViewModel.getCurrentFirebaseUser().getEmail());
     }
 
+    //Showing the setting dialog
     public void showSettings() {
         drawer.closeDrawer(GravityCompat.START);
         SettingsDialog settingsDialog = new SettingsDialog();
         settingsDialog.show(getSupportFragmentManager(), "settings Dialog");
     }
 
+    //Method to make a Place Detail call when we have a place id
+    public void getDetails(Result result) {
+        restaurantViewModel.getRestaurantDetail(result.getPlaceId(), getApplicationContext()).observe(MainActivity.this, resultDetails -> {
+            if(resultDetails != null) {
+                EventBus.getDefault().postSticky(new YourLunchEvent(resultDetails));
+                mainBinding.toolbar.setVisibility(View.GONE);
+                mainBinding.drawerLayout.closeDrawer(GravityCompat.START);
+                navController.navigate(R.id.detailFragment);
+            }
+        });
+    }
+
+    //Event called when the map fragment is ready
+    @Subscribe
+    public void onMapReadyEvent(MapReadyEvent event) {
+        if (event.mapReady) {
+            restaurantViewModel.getRestaurantsAround(localUser.getLocation(), this).observe(this, results -> {
+                if (results != null) {
+                    restaurantViewModel.setRestaurantsAround(results);
+                    mainBinding.mainProgressBar.hide();
+                    mainBinding.bottomNavView.setVisibility(View.VISIBLE);
+                    mainBinding.toolbar.setVisibility(View.VISIBLE);
+                    updateUi();
+                }
+            });
+        }
+    }
+
+    //Activity Result for Places Autocomplete
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -229,32 +281,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void lunchClick() {
-        if (localUser != null) {
-            if (localUser.getHasBooked()) {
-                restaurantViewModel.getRestaurantFromName(localUser.getPlaceBooked(), localUser.getLocation(), this.getApplicationContext()).observe(this, result -> {
-                    if (result != null) {
-                        Log.d(TAG, "onChanged: result found !" + result.getPlaceId());
-                        getDetails(result);
-                    }
-                });
-            } else {
-                Snackbar.make(mainBinding.getRoot(), getString(R.string.no_lunch_yet), BaseTransientBottomBar.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    public void getDetails(Result result) {
-        restaurantViewModel.getRestaurantDetail(result.getPlaceId(), getApplicationContext()).observe(MainActivity.this, resultDetails -> {
-            if(resultDetails != null) {
-                EventBus.getDefault().postSticky(new YourLunchEvent(resultDetails));
-                mainBinding.toolbar.setVisibility(View.GONE);
-                mainBinding.drawerLayout.closeDrawer(GravityCompat.START);
-                navController.navigate(R.id.detailFragment);
-            }
-        });
-    }
-
+    //Class for the settings Dialog
     public static class SettingsDialog extends DialogFragment {
         @NonNull
         @Override

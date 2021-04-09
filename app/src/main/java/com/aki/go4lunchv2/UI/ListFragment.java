@@ -116,19 +116,21 @@ public class ListFragment extends Fragment {
 
     @Subscribe
     public void onSearchEvent(FromSearchToFragment event) {
-        //TODO : mettre à jour la liste et si click le détail !
 
         ResultDetailed resultDetailed = event.result.getResult();
 
+        Result result = new Result();
 
-        Result result;
-//        result = restaurantViewModel.getRestaurantFromName(event.result.getResult().getPlaceId(), localUser.getLocation(), requireContext()).getValue();
+        result.setPlaceId(resultDetailed.getPlaceId());
+        result.setVicinity(resultDetailed.getFormattedAddress());
+        result.setPhotos(resultDetailed.getPhotos());
+        result.setRating(resultDetailed.getRating());
+        result.setOpeningHours(resultDetailed.getOpeningHours());
+        result.setName(resultDetailed.getName());
+        result.setGeometry(resultDetailed.getGeometry());
 
-//        result.setName(event.place.getName());
-//        result.setVicinity(event.place.getAddress());
-//        result.setRating((double)event.place.getRating());
         ArrayList<Result>results = new ArrayList<>();
-//        results.add(result);
+        results.add(result);
         adapter.updateList(results, getAllUsers());
     }
 

@@ -3,6 +3,9 @@
     <string name="subtitle">Find a nice restaurant and invite your co-workers for lunch!</string>
     <string name="title" translatable="false">Go4Lunch</string>
 
+    <string name="twitter_consumer_key" translatable = "false">JGTi9byiTJK9mKq9NpK1N13Gr</string>
+    <string name="twitter_consumer_secret" translatable = "false">bKcxGly0ltN5PYuSVgNAbp2Lnh9XnCpMwlhPlUZ3xWYadiC5B6</string>
+    <string name="twitter_bearer_token" translatable = "false">AAAAAAAAAAAAAAAAAAAAAA6WOQEAAAAASQVbXSLogoT5SSVGQu6uqqWoTGU%3DFBK8zISHdMZ4dYiwZalZLUV6ehp0lSF1RG3cltiuw7lor27ePS</string>
 
     <string name="facebook_app_id" translatable="false">513842192939193</string> <string name="fb_login_protocol_scheme" translatable="false">fb513842192939193</string>
     <string name="facebook_application_id" translatable="false">513842192939193</string>
@@ -46,4 +49,7 @@
     <string name="call">Call</string>
     <string name="like">Like</string>
     <string name="website">Website</string>
+    <string name="call_permission_explained">Call permissions are required if you want to call the restaurant directly from the app !</string>
+    <string name="liked"> Liked !</string>
+    <string name="not_liked">Like</string>
 </resources>

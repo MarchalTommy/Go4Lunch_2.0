@@ -13,6 +13,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 public class UserHelper {
@@ -79,5 +80,9 @@ public class UserHelper {
 
     public static Task<Void> updateLocation(String locationString) {
         return UserHelper.getCurrentUser().update("location", locationString);
+    }
+
+    public static Task<Void> updatePlaceLiked(ArrayList<String> placeLiked, String uid) {
+        return UserHelper.getCurrentUser().update("placeLiked", placeLiked);
     }
 }

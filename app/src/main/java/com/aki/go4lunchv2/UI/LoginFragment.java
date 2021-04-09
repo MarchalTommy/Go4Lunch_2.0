@@ -1,7 +1,9 @@
 package com.aki.go4lunchv2.UI;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,6 +30,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import static android.app.Activity.RESULT_OK;
+import static android.content.ContentValues.TAG;
 
 public class LoginFragment extends Fragment {
 
@@ -60,23 +63,19 @@ public class LoginFragment extends Fragment {
 
         navController = Navigation.findNavController(view);
 
-        savedStateHandle = Objects.requireNonNull(Navigation.findNavController(view)
-                .getPreviousBackStackEntry())
-                .getSavedStateHandle();
-        savedStateHandle.set(LOGIN_SUCCESSFUL, false);
-
         startSignInActivity();
-
     }
 
     private void startSignInActivity() {
+        Log.d(TAG, "startSignInActivity: SIGN IN STARTED");
         startActivityForResult(
                 AuthUI.getInstance()
                         .createSignInIntentBuilder()
                         .setAvailableProviders(Arrays.asList(
+                                new AuthUI.IdpConfig.EmailBuilder().build(),
                                 new AuthUI.IdpConfig.GoogleBuilder().build(),
-                                new AuthUI.IdpConfig.FacebookBuilder().build()/*,
-                                new AuthUI.IdpConfig.TwitterBuilder().build()*/))
+                                new AuthUI.IdpConfig.FacebookBuilder().build(),
+                                new AuthUI.IdpConfig.TwitterBuilder().build()))
                         .setIsSmartLockEnabled(false, true)
                         .setTheme(R.style.Startup_theme)
                         .setLogo(R.drawable.logo_title)
@@ -86,16 +85,18 @@ public class LoginFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        Log.d(TAG, "onActivityResult: SIGN IN COMPLETE");
         handleResponseAfterSignIn(requestCode, resultCode, data);
     }
 
     private void handleResponseAfterSignIn(int requestCode, int resultCode, Intent data) {
         IdpResponse response = IdpResponse.fromResultIntent(data);
-
+        Log.d(TAG, "handleResponseAfterSignIn: SIGN IN AFTER CHECK : LOGIN OR ERROR");
         if (requestCode == AUTH_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                userViewModel.createCurrentUserInFirestore();
-                savedStateHandle.set(LOGIN_SUCCESSFUL, true);
+                if(response.isNewUser()){
+                    userViewModel.createCurrentUserInFirestore();
+                }
                 NavHostFragment.findNavController(this).navigate(R.id.mapFragment);
             } else {
                 if (response == null) {

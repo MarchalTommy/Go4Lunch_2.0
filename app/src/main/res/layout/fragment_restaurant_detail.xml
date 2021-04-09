@@ -102,30 +102,33 @@
                 android:layout_marginVertical="8dp"
                 android:layout_weight="1"
                 android:drawablePadding="8dp"
-                android:drawableTint="@color/primaryColor"
+                app:drawableTint="@color/primaryColor"
                 android:gravity="center"
                 android:text="@string/call"
                 android:clickable="true"
                 android:textAllCaps="true"
                 android:textColor="@color/primaryColor"
                 android:textSize="20sp"
-                app:drawableTopCompat="@drawable/ic_call" />
+                app:drawableTopCompat="@drawable/ic_call"
+                android:focusable="true" />
 
             <TextView
+                android:state_enabled="true"
                 android:id="@+id/like_btn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginVertical="8dp"
                 android:layout_weight="1"
                 android:drawablePadding="8dp"
-                android:drawableTint="@color/primaryColor"
                 android:gravity="center"
                 android:text="@string/like"
+                app:drawableTint="@color/primaryColor"
                 android:clickable="true"
                 android:textAllCaps="true"
                 android:textColor="@color/primaryColor"
                 android:textSize="20sp"
-                app:drawableTopCompat="@drawable/ic_like" />
+                app:drawableTopCompat="@drawable/ic_like"
+                android:focusable="true" />
 
             <TextView
                 android:id="@+id/website_btn"
@@ -134,14 +137,15 @@
                 android:layout_marginVertical="8dp"
                 android:layout_weight="1"
                 android:drawablePadding="8dp"
-                android:drawableTint="@color/primaryColor"
+                app:drawableTint="@color/primaryColor"
                 android:gravity="center"
                 android:text="@string/website"
                 android:clickable="true"
                 android:textAllCaps="true"
                 android:textColor="@color/primaryColor"
                 android:textSize="20sp"
-                app:drawableTopCompat="@drawable/ic_website" />
+                app:drawableTopCompat="@drawable/ic_website"
+                android:focusable="true" />
 
         </LinearLayout>
 

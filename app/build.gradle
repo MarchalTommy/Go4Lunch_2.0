@@ -91,4 +91,7 @@ dependencies {
 
     //Mockito
     implementation 'org.mockito:mockito-core:3.8.0'
+
+    //TWITTER
+    implementation 'com.twitter.sdk.android:twitter-core:3.3.0'
 }

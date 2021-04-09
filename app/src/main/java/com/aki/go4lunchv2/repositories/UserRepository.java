@@ -127,4 +127,8 @@ public class UserRepository {
         String locationString = location.latitude + "," + location.longitude;
         UserHelper.updateLocation(locationString);
     }
+
+    public void updatePlaceLiked(ArrayList<String> placeLiked, String uid) {
+        UserHelper.updatePlaceLiked(placeLiked, uid);
+    }
 }

@@ -25,6 +25,7 @@ public class User {
     private String urlPicture;
     private String placeBooked = "null";
     private String location = "";
+    private ArrayList<String> placeLiked = new ArrayList<>();
 
     public User() {
     }
@@ -52,6 +53,22 @@ public class User {
 
     public void setPlaceBooked(String resultBooked) {
         this.placeBooked = resultBooked;
+    }
+
+    public ArrayList<String> getPlaceLiked() {
+        return placeLiked;
+    }
+
+    public void setPlaceLiked (ArrayList<String> placeLiked) {
+        this.placeLiked = placeLiked;
+    }
+
+    public void addPlaceLiked(String placeLikedID) {
+        placeLiked.add(placeLikedID);
+    }
+
+    public void removePlaceLiked(String placeLikedID) {
+        placeLiked.remove(placeLikedID);
     }
 
     public String getUid() {

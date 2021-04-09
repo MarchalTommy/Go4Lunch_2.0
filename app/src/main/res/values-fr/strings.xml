@@ -39,4 +39,7 @@
     <string name="call">Appeler</string>
     <string name="like">Liker</string>
     <string name="website">Site Web</string>
+    <string name="call_permission_explained">La permission d\'appel est requise si vous voulez appeler le restaurant directement depuis l\'application !</string>
+    <string name="liked">Liked !</string>
+    <string name="not_liked">Like</string>
 </resources>

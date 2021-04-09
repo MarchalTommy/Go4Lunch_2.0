@@ -1,12 +1,12 @@
 package com.aki.go4lunchv2.events;
 
-import com.aki.go4lunchv2.models.Result;
+import com.aki.go4lunchv2.models.ResultDetailed;
 
 public class FromMapToDetailEvent {
 
-    public Result result;
+    public ResultDetailed result;
 
-    public FromMapToDetailEvent(Result result) {
+    public FromMapToDetailEvent(ResultDetailed result) {
         this.result = result;
     }
 }
