@@ -31,7 +31,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.74"
-        app:maxImageSize="36dp" />
+        app:maxImageSize="36dp"
+        android:contentDescription="@string/content_desc_your_lunch" />
 
     <TextView
         android:id="@+id/restaurantDetailName"

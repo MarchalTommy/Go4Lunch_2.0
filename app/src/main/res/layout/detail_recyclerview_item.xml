@@ -6,7 +6,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:paddingBottom="16dp">
 
-    <de.hdodenhof.circleimageview.CircleImageView
+    <ImageView
         android:id="@+id/restaurantDetailWorkmatePic"
         android:layout_width="67dp"
         android:layout_height="67dp"

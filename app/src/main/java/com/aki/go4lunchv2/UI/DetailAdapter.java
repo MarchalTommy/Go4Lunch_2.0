@@ -14,6 +14,7 @@ import com.aki.go4lunchv2.databinding.DetailRecyclerviewItemBinding;
 import com.aki.go4lunchv2.databinding.WorkmatesRecyclerviewItemBinding;
 import com.aki.go4lunchv2.models.User;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.BaseRequestOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,10 +65,11 @@ public class DetailAdapter extends RecyclerView.Adapter<DetailAdapter.DetailView
 
         public void bind(User user) {
 
-            binding.restaurantDetailWorkmateText.setText(new StringBuilder().append(user.getUsername()).append(context.getString(R.string.eats_here)).toString());
+            binding.restaurantDetailWorkmateText.setText(user.getUsername() + " " + context.getString(R.string.eats_here));
 
             Glide.with(context)
                     .load(user.getUrlPicture())
+                    .circleCrop()
                     .into(binding.restaurantDetailWorkmatePic);
         }
     }

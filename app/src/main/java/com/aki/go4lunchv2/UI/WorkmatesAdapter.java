@@ -11,8 +11,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.WorkmatesRecyclerviewItemBinding;
+import com.aki.go4lunchv2.events.FromWorkmatesListToFragment;
 import com.aki.go4lunchv2.models.User;
 import com.bumptech.glide.Glide;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +44,10 @@ public class WorkmatesAdapter extends RecyclerView.Adapter<WorkmatesAdapter.Work
     @Override
     public void onBindViewHolder(@NonNull WorkmatesViewHolder holder, int position) {
         holder.bind(users.get(position));
+
+        holder.itemView.setOnClickListener(view -> {
+            EventBus.getDefault().post(new FromWorkmatesListToFragment(users.get(position)));
+        });
     }
 
     @Override

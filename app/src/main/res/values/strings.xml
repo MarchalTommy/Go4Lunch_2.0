@@ -52,4 +52,6 @@
     <string name="call_permission_explained">Call permissions are required if you want to call the restaurant directly from the app !</string>
     <string name="liked"> Liked !</string>
     <string name="not_liked">Like</string>
+    <string name="content_desc_your_lunch">Make this place your lunch!</string>
+    <string name="notification_title">It\'s time !</string>
 </resources>

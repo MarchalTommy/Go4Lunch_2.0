@@ -21,6 +21,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -55,6 +56,9 @@ import com.google.android.material.snackbar.Snackbar;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static android.content.ContentValues.TAG;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
@@ -62,6 +66,7 @@ public class MapFragment extends Fragment {
 
     RestaurantViewModel restaurantViewModel;
     UserViewModel userViewModel;
+    ArrayList<User> allUsers = new ArrayList<>();
     User localUser = User.getInstance();
 
     FragmentMapBinding mapBinding;
@@ -144,7 +149,16 @@ public class MapFragment extends Fragment {
     private void getLocalRestaurantsData() {
         BitmapDescriptor iconBasic = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
         Bitmap bitmap;
-        BitmapDescriptor iconLunchHere = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
+        BitmapDescriptor iconLunchHere = BitmapDescriptorFactory.fromResource(R.drawable.ic_restaurant_marker);
+
+        userViewModel.getAllUsers().observe(getViewLifecycleOwner(), new Observer<List<User>>() {
+            @Override
+            public void onChanged(List<User> users) {
+                if(users != null) {
+                    allUsers.addAll(users);
+                }
+            }
+        });
 
         restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), results -> {
             if (results != null) {
@@ -154,11 +168,19 @@ public class MapFragment extends Fragment {
                             r.getGeometry().getLocation().getLng());
 
                     MarkerOptions markerOptions = new MarkerOptions();
-                    if(localUser.getPlaceBooked().equals(r.getName())){
-                        markerOptions.icon(iconLunchHere);
-                    } else {
-                        markerOptions.icon(iconBasic);
+
+                    for(User u : allUsers) {
+                        if(u.getPlaceBooked() != null && !u.getPlaceBooked().isEmpty()){
+                            if(u.getPlaceBooked().equals(r.getName())){
+                                markerOptions.icon(iconLunchHere);
+                            } else {
+                                markerOptions.icon(iconBasic);
+                            }
+                        } else {
+                            markerOptions.icon(iconBasic);
+                        }
                     }
+
                     markerOptions.title(r.getName());
                     markerOptions.position(restaurantLocation);
 
