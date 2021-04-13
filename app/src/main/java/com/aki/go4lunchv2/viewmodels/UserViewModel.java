@@ -70,4 +70,8 @@ public class UserViewModel extends ViewModel {
     public void updatePlaceLiked(ArrayList<String> placeLiked) {
         userRepository.updatePlaceLiked(placeLiked, getCurrentFirebaseUser().getUid());
     }
+
+    public void updateNotificationPreference(Boolean pref) {
+        userRepository.updateNotificationPreference(pref);
+    }
 }

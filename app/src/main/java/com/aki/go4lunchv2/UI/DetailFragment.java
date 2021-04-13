@@ -109,7 +109,7 @@ public class DetailFragment extends Fragment {
                 }
                 break;
             case R.id.website_btn:
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(restaurantDetail.getUrl())));
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(restaurantDetail.getWebsite())));
                 break;
         }
     };

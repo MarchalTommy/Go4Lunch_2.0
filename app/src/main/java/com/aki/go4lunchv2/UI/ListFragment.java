@@ -145,7 +145,7 @@ public class ListFragment extends Fragment {
                 details.setInternationalPhoneNumber(resultDetails.getResult().getInternationalPhoneNumber());
                 details.setPhotos(resultDetails.getResult().getPhotos());
                 details.setRating(resultDetails.getResult().getRating());
-                details.setUrl(resultDetails.getResult().getUrl());
+                details.setWebsite(resultDetails.getResult().getWebsite());
 
                 navController.navigate(R.id.action_listFragment_to_detailFragment);
                 EventBus.getDefault().postSticky(new FromListToDetailEvent(details));

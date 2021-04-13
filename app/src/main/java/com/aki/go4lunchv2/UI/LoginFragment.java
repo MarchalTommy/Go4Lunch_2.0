@@ -68,6 +68,7 @@ public class LoginFragment extends Fragment {
 
     private void startSignInActivity() {
         Log.d(TAG, "startSignInActivity: SIGN IN STARTED");
+        System.out.println("METHOD CALLED");
         startActivityForResult(
                 AuthUI.getInstance()
                         .createSignInIntentBuilder()
@@ -97,7 +98,7 @@ public class LoginFragment extends Fragment {
                 if(response.isNewUser()){
                     userViewModel.createCurrentUserInFirestore();
                 }
-                NavHostFragment.findNavController(this).navigate(R.id.mapFragment);
+                NavHostFragment.findNavController(this).navigate(R.id.action_loginFragment_to_mapFragment);
             } else {
                 if (response == null) {
                     showSnackBar(this.getView(), getString(R.string.auth_canceled));

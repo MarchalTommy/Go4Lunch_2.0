@@ -31,9 +31,9 @@ public class ResultDetailed {
     @SerializedName("rating")
     @Expose
     private Double rating;
-    @SerializedName("url")
+    @SerializedName("website")
     @Expose
-    private String url;
+    private String website;
 
     public String getFormattedAddress() {
         return formattedAddress;
@@ -139,16 +139,16 @@ public class ResultDetailed {
         return this;
     }
 
-    public String getUrl() {
-        return url;
+    public String getWebsite() {
+        return website;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setWebsite(String website) {
+        this.website = website;
     }
 
-    public ResultDetailed withUrl(String url) {
-        this.url = url;
+    public ResultDetailed withWebsite(String website) {
+        this.website = website;
         return this;
     }
 

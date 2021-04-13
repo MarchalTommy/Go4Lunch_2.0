@@ -131,4 +131,8 @@ public class UserRepository {
     public void updatePlaceLiked(ArrayList<String> placeLiked, String uid) {
         UserHelper.updatePlaceLiked(placeLiked, uid);
     }
+
+    public void updateNotificationPreference(Boolean pref) {
+        UserHelper.updateNotificationPreference(pref);
+    }
 }

@@ -8,7 +8,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -38,8 +37,6 @@ import com.aki.go4lunchv2.viewmodels.UserViewModel;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.model.RectangularBounds;
@@ -51,13 +48,13 @@ import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static android.content.ContentValues.TAG;
 
@@ -100,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 return true;
             };
-    //Menu Listener (Places Autocomplete
+    //Menu Listener (Places Autocomplete)
     private final MenuItem.OnMenuItemClickListener searchListener =
             menuItem -> {
                 List<Place.Field> fieldList = Arrays.asList(Place.Field.NAME, Place.Field.ID);
@@ -122,7 +119,6 @@ public class MainActivity extends AppCompatActivity {
             if (localUser.getHasBooked()) {
                 restaurantViewModel.getRestaurantFromName(localUser.getPlaceBooked(), localUser.getLocation(), this.getApplicationContext()).observe(this, result -> {
                     if (result != null) {
-                        Log.d(TAG, "onChanged: result found !" + result.getPlaceId());
                         getDetails(result);
                     }
                 });
@@ -143,27 +139,12 @@ public class MainActivity extends AppCompatActivity {
         NavigationSetup();
         places();
 
+        // If user is logged in
         if (userViewModel.getCurrentFirebaseUser() != null) {
             mainBinding.mainProgressBar.show();
-            userViewModel.getCurrentUser().observe(this, user -> {
-                if(user != null) {
-                    if(user.getUsername() != null) {
-                        localUser.setUsername(user.getUsername());
-                    } else {
-                        localUser.setUsername(FirebaseAuth.getInstance().getCurrentUser().getDisplayName());
-                    }
-                    localUser.setPlaceBooked(user.getPlaceBooked());
-                    localUser.setHasBooked(user.getHasBooked());
-                    localUser.setLocation(user.getLocation());
-                    localUser.setPlaceLiked(user.getPlaceLiked());
-
-                    mainBinding.mainProgressBar.hide();
-                    mainBinding.bottomNavView.setVisibility(View.VISIBLE);
-                    mainBinding.toolbar.setVisibility(View.VISIBLE);
-                    updateUi();
-                }
-            });
+            getFromCloud();
         } else {
+            // Else, login screen
             navController.navigate(R.id.loginFragment);
             mainBinding.bottomNavView.setVisibility(View.GONE);
             mainBinding.toolbar.setVisibility(View.GONE);
@@ -185,14 +166,43 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         EventBus.getDefault().unregister(this);
+        updateCloud();
     }
 
-    //Places initialization
+    // Places initialization
     private void places() {
         Places.initialize(getApplicationContext(), getResources().getString(R.string.GOOGLE_MAPS_API_KEY));
     }
 
-    //Navigation Setup
+    // Updating cloud data
+    public void updateCloud() {
+        userViewModel.updatePlaceLiked(localUser.getPlaceLiked());
+        userViewModel.updatePlaceBooked(localUser.getPlaceBooked());
+        userViewModel.updateHasBooked(localUser.getHasBooked());
+        userViewModel.updateNotificationPreference(localUser.getNotificationPreference());
+    }
+
+    // Getting cloud data
+    public void getFromCloud() {
+        userViewModel.getCurrentUser().observe(this, user -> {
+            if (user != null) {
+                if (user.getUsername() != null) {
+                    localUser.setUsername(user.getUsername());
+                } else {
+                    localUser.setUsername(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getDisplayName());
+                }
+                localUser.setPlaceBooked(user.getPlaceBooked());
+                localUser.setHasBooked(user.getHasBooked());
+                localUser.setLocation(user.getLocation());
+                localUser.setPlaceLiked(user.getPlaceLiked());
+                localUser.setNotificationPreference(user.getNotificationPreference());
+
+                updateUi();
+            }
+        });
+    }
+
+    // Navigation Setup
     private void NavigationSetup() {
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
         if (navHostFragment != null) {
@@ -201,11 +211,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    //Updating the UI with all the information
+    // Updating the UI with all the information
     public void updateUi() {
         Toolbar toolbar = mainBinding.toolbar;
         toolbar.setTitle("I'm Hungry !");
         toolbar.getMenu().getItem(0).setOnMenuItemClickListener(searchListener);
+
+        mainBinding.mainProgressBar.hide();
+        mainBinding.bottomNavView.setVisibility(View.VISIBLE);
+        toolbar.setVisibility(View.VISIBLE);
 
         drawer = mainBinding.drawerLayout;
         NavigationView navView = mainBinding.navView;
@@ -233,14 +247,14 @@ public class MainActivity extends AppCompatActivity {
         headerBinding.usermail.setText(userViewModel.getCurrentFirebaseUser().getEmail());
     }
 
-    //Showing the setting dialog
+    // Showing the setting dialog
     public void showSettings() {
         drawer.closeDrawer(GravityCompat.START);
         SettingsDialog settingsDialog = new SettingsDialog();
         settingsDialog.show(getSupportFragmentManager(), "settings Dialog");
     }
 
-    //Method to make a Place Detail call when we have a place id
+    // Method to make a Place Detail call when we have a place id
     public void getDetails(Result result) {
         restaurantViewModel.getRestaurantDetail(result.getPlaceId(), getApplicationContext()).observe(MainActivity.this, resultDetails -> {
             if(resultDetails != null) {
@@ -252,7 +266,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    //Event called when the map fragment is ready
+    // Event called when the map fragment is ready
     @Subscribe
     public void onMapReadyEvent(MapReadyEvent event) {
         if (event.mapReady) {
@@ -268,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    //Activity Result for Places Autocomplete
+    // Activity Result for Places Autocomplete
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -285,8 +299,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    //Class for the settings Dialog
+    // Anonymous Class for the settings Dialog
     public static class SettingsDialog extends DialogFragment {
+        User localUser = User.getInstance();
+
         @NonNull
         @Override
         public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
@@ -298,11 +314,7 @@ public class MainActivity extends AppCompatActivity {
             builder.setView(view)
                     .setCancelable(true)
                     .setNeutralButton(getString(R.string.confirm_settings), (dialogInterface, i) -> {
-                        if (binding.notificationSwitch.isEnabled()) {
-                            //TODO : activer notifications
-                        } else {
-                            //TODO : désactiver notifications
-                        }
+                        localUser.setNotificationPreference(binding.notificationSwitch.isEnabled());
                     });
 
             return builder.create();

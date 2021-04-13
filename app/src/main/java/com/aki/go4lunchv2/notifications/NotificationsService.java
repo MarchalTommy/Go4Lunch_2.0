@@ -20,19 +20,21 @@ public class NotificationsService extends FirebaseMessagingService {
 
     public static final int NOTIFICATION_ID = 100;
     public static final String NOTIFICATION_TAG = "FIREBASETEST";
+    public static Boolean notificationsEnabled;
 
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         if (remoteMessage.getNotification() != null) {
             String message = remoteMessage.getNotification().getBody();
-            sendVisualNotification(message);
+            if(notificationsEnabled){
+                sendVisualNotification(message);
+            }
         }
     }
 
     private void sendVisualNotification(String messageBody) {
         // Creating an Intent that will be shown when user will click on the notification
         Intent intent = new Intent(this, MainActivity.class);
-        Context context;
         PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_ONE_SHOT);
 
         // Creating a style for the notification

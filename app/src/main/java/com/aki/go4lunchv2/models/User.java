@@ -26,6 +26,7 @@ public class User {
     private String placeBooked = "null";
     private String location = "";
     private ArrayList<String> placeLiked = new ArrayList<>();
+    private Boolean notificationPreference;
 
     public User() {
     }
@@ -37,6 +38,14 @@ public class User {
         this.hasBooked = hasBooked;
         this.placeBooked = placeBooked;
         this.location = location;
+    }
+
+    public void setNotificationPreference(Boolean preference) {
+        this.notificationPreference = preference;
+    }
+
+    public Boolean getNotificationPreference() {
+        return notificationPreference;
     }
 
     public void setLocation(String location) {

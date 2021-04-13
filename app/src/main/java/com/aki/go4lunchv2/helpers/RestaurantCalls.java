@@ -67,7 +67,7 @@ public class RestaurantCalls {
                 context.getResources().getString(R.string.GOOGLE_MAPS_API_KEY),
                 id,
                 "fr",
-                "formatted_address,name,geometry,photo,place_id,url,international_phone_number,opening_hours,rating");
+                "formatted_address,name,geometry,photo,place_id,website,international_phone_number,opening_hours,rating");
 
         call.enqueue(new Callback<JsonObject>() {
             @Override

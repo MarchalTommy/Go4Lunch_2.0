@@ -85,4 +85,8 @@ public class UserHelper {
     public static Task<Void> updatePlaceLiked(ArrayList<String> placeLiked, String uid) {
         return UserHelper.getCurrentUser().update("placeLiked", placeLiked);
     }
+
+    public static Task<Void> updateNotificationPreference(Boolean pref) {
+        return UserHelper.getCurrentUser().update("notificationPreference", pref);
+    }
 }
