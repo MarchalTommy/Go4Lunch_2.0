@@ -94,8 +94,10 @@ public class MapFragment extends Fragment {
 
         //Init map fragment
         supportMapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map_frag);
-
         client = LocationServices.getFusedLocationProviderClient(requireActivity());
+
+        getPermissions();
+        initMap();
 
         return view;
     }
@@ -105,8 +107,6 @@ public class MapFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         navController = Navigation.findNavController(view);
         mapBinding = FragmentMapBinding.bind(view);
-        getPermissions();
-        initMap();
     }
 
     public void initMap() {
@@ -121,7 +121,6 @@ public class MapFragment extends Fragment {
             EventBus.getDefault().post(new MapReadyEvent(true));
 
             getLocalRestaurantsData();
-            locationUpdates();
 
             googleMap.setOnMarkerClickListener(marker -> {
                 restaurantViewModel.getRestaurantFromName(marker.getTitle(), localUser.getLocation(), requireContext())
@@ -154,7 +153,7 @@ public class MapFragment extends Fragment {
         userViewModel.getAllUsers().observe(getViewLifecycleOwner(), new Observer<List<User>>() {
             @Override
             public void onChanged(List<User> users) {
-                if(users != null) {
+                if (users != null) {
                     allUsers.addAll(users);
                 }
             }
@@ -169,9 +168,9 @@ public class MapFragment extends Fragment {
 
                     MarkerOptions markerOptions = new MarkerOptions();
 
-                    for(User u : allUsers) {
-                        if(u.getPlaceBooked() != null && !u.getPlaceBooked().isEmpty()){
-                            if(u.getPlaceBooked().equals(r.getName())){
+                    for (User u : allUsers) {
+                        if (u.getPlaceBooked() != null && !u.getPlaceBooked().isEmpty()) {
+                            if (u.getPlaceBooked().equals(r.getName())) {
                                 markerOptions.icon(iconLunchHere);
                             } else {
                                 markerOptions.icon(iconBasic);
@@ -191,6 +190,7 @@ public class MapFragment extends Fragment {
     }
 
     private void locationVariableUpdate(Location location) {
+        locationUpdates();
         Log.d(TAG, "onComplete: LOCATION FOR DEVELOPPEMENT PURPOSE => " + location.getLatitude() + " : " + location.getLongitude());
         //For the LatLng var
         latLng = new LatLng(location.getLatitude(), location.getLongitude());
@@ -198,7 +198,8 @@ public class MapFragment extends Fragment {
         stringLocation = latLng.latitude + "," + latLng.longitude;
         //To be accessed from the list view, update on the sharedViewModel
         localUser.setLocation(stringLocation);
-        userViewModel.setLocation(latLng);
+        if (userViewModel.getCurrentFirebaseUser() != null)
+            userViewModel.setLocation(latLng);
         //For the map
         gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17));
     }

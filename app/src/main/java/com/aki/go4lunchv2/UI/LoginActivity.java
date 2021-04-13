@@ -1,25 +1,18 @@
 package com.aki.go4lunchv2.UI;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.SavedStateHandle;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentLoginBinding;
-import com.aki.go4lunchv2.models.User;
 import com.aki.go4lunchv2.viewmodels.UserViewModel;
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.ErrorCodes;
@@ -27,43 +20,33 @@ import com.firebase.ui.auth.IdpResponse;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.Arrays;
-import java.util.Objects;
 
-import static android.app.Activity.RESULT_OK;
 import static android.content.ContentValues.TAG;
 
-public class LoginFragment extends Fragment {
+public class LoginActivity extends AppCompatActivity {
 
     private static final int AUTH_REQUEST_CODE = 123;
-    public static String LOGIN_SUCCESSFUL = "LOGIN_SUCCESSFUL";
-    NavController navController;
     FragmentLoginBinding binding;
     UserViewModel userViewModel;
-    private SavedStateHandle savedStateHandle;
-
-    private final User localUser = User.getInstance();
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
-    }
+        userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_login, container, false);
-    }
+        binding = FragmentLoginBinding.inflate(getLayoutInflater());
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        binding = FragmentLoginBinding.bind(view);
 
-        navController = Navigation.findNavController(view);
+        if(userViewModel.getCurrentFirebaseUser() != null) {
+            // INTENT TO MAIN ACTIVITY
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
+            finish();
+        } else {
+            startSignInActivity();
+        }
 
-        startSignInActivity();
+        setContentView(R.layout.login_activity);
     }
 
     private void startSignInActivity() {
@@ -98,14 +81,17 @@ public class LoginFragment extends Fragment {
                 if(response.isNewUser()){
                     userViewModel.createCurrentUserInFirestore();
                 }
-                NavHostFragment.findNavController(this).navigate(R.id.action_loginFragment_to_mapFragment);
+                // INTENT TO MAIN ACTIVITY
+                Intent intent = new Intent(this, MainActivity.class);
+                startActivity(intent);
+                finish();
             } else {
                 if (response == null) {
-                    showSnackBar(this.getView(), getString(R.string.auth_canceled));
+                    showSnackBar(getCurrentFocus(), getString(R.string.auth_canceled));
                 } else if (response.getError().getErrorCode() == ErrorCodes.NO_NETWORK) {
-                    showSnackBar(this.getView(), getString(R.string.error_no_internet));
+                    showSnackBar(getCurrentFocus(), getString(R.string.error_no_internet));
                 } else if (response.getError().getErrorCode() == ErrorCodes.UNKNOWN_ERROR) {
-                    showSnackBar(this.getView(), getString(R.string.error_unknown_error));
+                    showSnackBar(getCurrentFocus(), getString(R.string.error_unknown_error));
                 }
             }
         }
@@ -114,4 +100,6 @@ public class LoginFragment extends Fragment {
     private void showSnackBar(View view, String message) {
         Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
     }
+
+
 }

@@ -3,11 +3,13 @@ package com.aki.go4lunchv2.UI;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,6 +30,7 @@ import com.aki.go4lunchv2.databinding.NavHeaderBinding;
 import com.aki.go4lunchv2.databinding.SettingsDialogBinding;
 import com.aki.go4lunchv2.events.FromSearchToFragment;
 import com.aki.go4lunchv2.events.MapReadyEvent;
+import com.aki.go4lunchv2.events.SettingDialogClosed;
 import com.aki.go4lunchv2.events.YourLunchEvent;
 import com.aki.go4lunchv2.models.Result;
 import com.aki.go4lunchv2.models.ResultDetails;
@@ -37,6 +40,8 @@ import com.aki.go4lunchv2.viewmodels.UserViewModel;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.model.RectangularBounds;
@@ -48,6 +53,7 @@ import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -56,9 +62,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static android.content.ContentValues.TAG;
-
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "BONJOUR";
 
     //TODO : Optimiser map éventuellement
 
@@ -67,8 +72,11 @@ public class MainActivity extends AppCompatActivity {
     RestaurantViewModel restaurantViewModel;
     NavController navController;
     User localUser = User.getInstance();
+    public static boolean notification_state = true;
 
-    public static final String CHANNEL_1_ID = "mainNotifications";
+    // CONST
+    public static final String SHARED_PREFS = "sharedPrefs";
+    public static final String NOTIFICATIONS = "notificationState";
 
     // BINDINGS
     ActivityMainBinding mainBinding;
@@ -91,8 +99,10 @@ public class MainActivity extends AppCompatActivity {
                         showSettings();
                         break;
                     case R.id.logout:
+                        //navController.navigate(R.id.loginFragment);
+                        Intent intent = new Intent(this, LoginActivity.class);
+                        startActivity(intent);
                         userViewModel.logout(this);
-                        navController.navigate(R.id.loginFragment);
                         break;
                 }
                 return true;
@@ -112,7 +122,6 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(intent, 100);
                 return true;
             };
-
     //When click on the "Your Lunch" button in the drawer
     public void lunchClick() {
         if (localUser != null) {
@@ -145,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
             getFromCloud();
         } else {
             // Else, login screen
-            navController.navigate(R.id.loginFragment);
+            //navController.navigate(R.id.loginFragment);
             mainBinding.bottomNavView.setVisibility(View.GONE);
             mainBinding.toolbar.setVisibility(View.GONE);
         }
@@ -247,13 +256,6 @@ public class MainActivity extends AppCompatActivity {
         headerBinding.usermail.setText(userViewModel.getCurrentFirebaseUser().getEmail());
     }
 
-    // Showing the setting dialog
-    public void showSettings() {
-        drawer.closeDrawer(GravityCompat.START);
-        SettingsDialog settingsDialog = new SettingsDialog();
-        settingsDialog.show(getSupportFragmentManager(), "settings Dialog");
-    }
-
     // Method to make a Place Detail call when we have a place id
     public void getDetails(Result result) {
         restaurantViewModel.getRestaurantDetail(result.getPlaceId(), getApplicationContext()).observe(MainActivity.this, resultDetails -> {
@@ -299,9 +301,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Showing the setting dialog
+    public void showSettings() {
+        drawer.closeDrawer(GravityCompat.START);
+        loadData();
+        SettingsDialog settingsDialog = new SettingsDialog();
+        settingsDialog.show(getSupportFragmentManager(), "settings Dialog");
+    }
+
     // Anonymous Class for the settings Dialog
     public static class SettingsDialog extends DialogFragment {
-        User localUser = User.getInstance();
 
         @NonNull
         @Override
@@ -311,13 +320,34 @@ public class MainActivity extends AppCompatActivity {
             View view = inflater.inflate(R.layout.settings_dialog, null, false);
             SettingsDialogBinding binding = SettingsDialogBinding.bind(view);
 
+            binding.notificationSwitch.setEnabled(notification_state);
+
             builder.setView(view)
                     .setCancelable(true)
                     .setNeutralButton(getString(R.string.confirm_settings), (dialogInterface, i) -> {
-                        localUser.setNotificationPreference(binding.notificationSwitch.isEnabled());
+                        notification_state = (binding.notificationSwitch.isEnabled());
+                        EventBus.getDefault().post(new SettingDialogClosed(notification_state));
                     });
 
             return builder.create();
         }
     }
+
+    @Subscribe
+    public void onDialogClosed(SettingDialogClosed event){
+        saveData();
+    }
+
+    public void saveData() {
+        SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(NOTIFICATIONS, notification_state);
+    }
+
+    public void loadData() {
+        SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
+        notification_state = sharedPreferences.getBoolean(NOTIFICATIONS, true);
+    }
+
+
 }

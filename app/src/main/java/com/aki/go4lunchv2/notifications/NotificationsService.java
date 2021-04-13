@@ -5,6 +5,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.RingtoneManager;
 import android.os.Build;
 
@@ -16,6 +17,10 @@ import com.aki.go4lunchv2.UI.MainActivity;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import static com.aki.go4lunchv2.UI.MainActivity.NOTIFICATIONS;
+import static com.aki.go4lunchv2.UI.MainActivity.SHARED_PREFS;
+
+
 public class NotificationsService extends FirebaseMessagingService {
 
     public static final int NOTIFICATION_ID = 100;
@@ -25,11 +30,17 @@ public class NotificationsService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         if (remoteMessage.getNotification() != null) {
+            loadData();
             String message = remoteMessage.getNotification().getBody();
             if(notificationsEnabled){
                 sendVisualNotification(message);
             }
         }
+    }
+
+    public void loadData() {
+        SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE );
+        notificationsEnabled = sharedPreferences.getBoolean(NOTIFICATIONS, true);
     }
 
     private void sendVisualNotification(String messageBody) {

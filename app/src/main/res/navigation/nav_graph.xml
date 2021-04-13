@@ -6,16 +6,6 @@
     app:startDestination="@id/mapFragment">
 
     <fragment
-        android:id="@+id/loginFragment"
-        android:name="com.aki.go4lunchv2.UI.LoginFragment"
-        android:label="fragment_login"
-        tools:layout="@layout/fragment_login" >
-        <action
-            android:id="@+id/action_loginFragment_to_mapFragment"
-            app:destination="@id/mapFragment" />
-    </fragment>
-
-    <fragment
         android:id="@+id/detailFragment"
         android:name="com.aki.go4lunchv2.UI.DetailFragment"
         android:label="DetailFragment" >
