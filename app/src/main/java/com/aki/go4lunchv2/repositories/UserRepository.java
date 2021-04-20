@@ -106,18 +106,20 @@ public class UserRepository {
         return user;
     }
 
-    public MutableLiveData<List<User>> getUsersOnPlace(String placeId) {
+    public MutableLiveData<List<User>> getUsersOnPlace(String placeName) {
         userList.clear();
         onPlaceUsers.setValue(userList);
 
-        UserHelper.getUserCollection().whereEqualTo("placeBooked", placeId).addSnapshotListener(new EventListener<QuerySnapshot>() {
+        UserHelper.getUserCollection().whereEqualTo("placeBooked", placeName).addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
             public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
-                List<User> userList = new ArrayList<>();
-                for(DocumentSnapshot ds : value.getDocuments()){
-                    userList.add(ds.toObject(User.class));
+                if(value != null){
+                    List<User> userList = new ArrayList<>();
+                    for(DocumentSnapshot ds : value.getDocuments()){
+                        userList.add(ds.toObject(User.class));
+                    }
+                    onPlaceUsers.setValue(userList);
                 }
-                onPlaceUsers.setValue(userList);
             }
         });
         return onPlaceUsers;

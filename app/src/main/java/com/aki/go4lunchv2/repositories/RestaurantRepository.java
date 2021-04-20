@@ -89,14 +89,17 @@ public class RestaurantRepository {
                     Gson gson = new Gson();
                     SearchResult searchResult = gson.fromJson(jsonObject, SearchResult.class);
                     Result result = new Result();
-                    Candidate candidate = searchResult.getCandidates().get(0);
-                    result.setName(candidate.getName());
-                    result.setVicinity(candidate.getFormattedAddress());
-                    result.setRating(candidate.getRating());
-                    result.setPhotos(candidate.getPhotos());
-                    result.setPlaceId(candidate.getPlaceId());
+                    if(searchResult != null) {
+                        Candidate candidate = searchResult.getCandidates().get(0);
+                        result.setName(candidate.getName());
+                        result.setVicinity(candidate.getFormattedAddress());
+                        result.setRating(candidate.getRating());
+                        result.setPhotos(candidate.getPhotos());
+                        result.setPlaceId(candidate.getPlaceId());
 
-                    restaurantFromName.setValue(result);
+                        restaurantFromName.setValue(result);
+                    }
+
                 }
             }
 

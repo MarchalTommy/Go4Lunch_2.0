@@ -8,15 +8,18 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.RingtoneManager;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
+import androidx.work.Worker;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.UI.MainActivity;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import static android.content.ContentValues.TAG;
 import static com.aki.go4lunchv2.UI.MainActivity.NOTIFICATIONS;
 import static com.aki.go4lunchv2.UI.MainActivity.SHARED_PREFS;
 
@@ -25,7 +28,7 @@ public class NotificationsService extends FirebaseMessagingService {
 
     public static final int NOTIFICATION_ID = 100;
     public static final String NOTIFICATION_TAG = "FIREBASETEST";
-    public static Boolean notificationsEnabled;
+    public static Boolean notificationsEnabled = false;
 
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
@@ -36,11 +39,14 @@ public class NotificationsService extends FirebaseMessagingService {
                 sendVisualNotification(message);
             }
         }
+        else {
+            Log.d(TAG, "onMessageReceived: NOTIFICATION BUGGED !! FIND IT AND KILL IT WITH FIRE!");
+        }
     }
 
     public void loadData() {
         SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE );
-        notificationsEnabled = sharedPreferences.getBoolean(NOTIFICATIONS, true);
+        notificationsEnabled = sharedPreferences.getBoolean(NOTIFICATIONS, false);
     }
 
     private void sendVisualNotification(String messageBody) {

@@ -34,8 +34,8 @@ public class UserViewModel extends ViewModel {
         return userRepository.getAllUsers();
     }
 
-    public MutableLiveData<List<User>> getUsersOnPlace(String placeId) {
-        return userRepository.getUsersOnPlace(placeId);
+    public MutableLiveData<List<User>> getUsersOnPlace(String placeName) {
+        return userRepository.getUsersOnPlace(placeName);
     }
 
     //UPDATE DATA

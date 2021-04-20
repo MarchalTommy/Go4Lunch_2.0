@@ -44,4 +44,10 @@
     <string name="not_liked">Like</string>
     <string name="content_desc_your_lunch">Faites de ce restaurant votre Lunch !</string>
     <string name="notification_title">C\'est l\'heure !</string>
+    <string name="no_phone">Nous n\'arrivons pas à récupérer le numéro de téléphone de ce restaurant, désolé !</string>
+    <string name="no_website">Ce restaurant n\'a pas indiqué de site internet !</string>
+    <string name="its_time_for_lunch">"Il est l'heure d'aller manger chez "</string>
+    <string name="the_address_is">L\'adresse est :</string>
+    <string name="youll_be_eating_with">"et vous mangerez avec "</string>
+    <string name="only_one">mais vous serez le seul à y manger !</string>
 </resources>

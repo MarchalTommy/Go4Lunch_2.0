@@ -15,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -79,11 +80,15 @@ public class DetailFragment extends Fragment {
         }
     };
     //Button bar (call, like, website)
-    @SuppressLint({"NonConstantResourceId", "NewApi", "UseCompatTextViewDrawableApis"})
+    @SuppressLint("NonConstantResourceId")
     private final OnClickListener callLikeWebsiteListener = view -> {
         switch (view.getId()) {
             case R.id.call_btn:
-                callPermission();
+                if(restaurantDetail.getInternationalPhoneNumber() != null) {
+                    callPermission();
+                } else {
+                    Toast.makeText(getContext(), getString(R.string.no_phone), Toast.LENGTH_LONG).show();
+                }
                 break;
             case R.id.like_btn:
                 if(localUser.getPlaceLiked().contains(restaurantDetail.getPlaceId())){
@@ -109,7 +114,11 @@ public class DetailFragment extends Fragment {
                 }
                 break;
             case R.id.website_btn:
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(restaurantDetail.getWebsite())));
+                if(restaurantDetail.getWebsite() != null) {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(restaurantDetail.getWebsite())));
+                } else {
+                    Toast.makeText(requireContext(), getString(R.string.no_website), Toast.LENGTH_LONG).show();
+                }
                 break;
         }
     };
@@ -358,7 +367,7 @@ public class DetailFragment extends Fragment {
     }
 
     private void explainPermission() {
-        Snackbar.make(getView(),
+        Snackbar.make(requireView(),
                 getString(R.string.call_permission_explained),
                 BaseTransientBottomBar.LENGTH_INDEFINITE)
                 .setAction(getString(R.string.authorize), view -> askPermission())
@@ -385,7 +394,7 @@ public class DetailFragment extends Fragment {
     }
 
     private void displayOptions() {
-        Snackbar.make(getView(), getString(R.string.permission_denied), BaseTransientBottomBar.LENGTH_LONG)
+        Snackbar.make(requireView(), getString(R.string.permission_denied), BaseTransientBottomBar.LENGTH_LONG)
                 .setAction(getString(R.string.settings_menu), view -> {
                     final Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                     final Uri uri = Uri.fromParts("package", requireActivity().getPackageName(), null);

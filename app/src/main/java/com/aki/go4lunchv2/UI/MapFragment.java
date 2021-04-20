@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationListener;
@@ -43,10 +44,13 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -110,28 +114,37 @@ public class MapFragment extends Fragment {
     }
 
     public void initMap() {
-        supportMapFragment.getMapAsync(googleMap -> {
-            //When map is loaded
-            BitmapDescriptor iconBasic = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
-            Bitmap bitmap;
-            BitmapDescriptor iconLunchHere = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
-            googleMap.clear();
-            gMap = googleMap;
+        supportMapFragment.getMapAsync(new OnMapReadyCallback() {
+            @Override
+            public void onMapReady(GoogleMap googleMap) {
+                gMap = googleMap;
 
-            EventBus.getDefault().post(new MapReadyEvent(true));
+                try {
+                    boolean success = googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(requireContext(), R.raw.mapstyle));
+                if(!success) {
+                    Log.d(TAG, "onMapReady: style parsing failed.");
+                }
 
-            getLocalRestaurantsData();
+                } catch (Resources.NotFoundException e) {
+                    Log.e(TAG, "onMapReady: Can't find style. Error :", e);
+                }
 
-            googleMap.setOnMarkerClickListener(marker -> {
-                restaurantViewModel.getRestaurantFromName(marker.getTitle(), localUser.getLocation(), requireContext())
-                        .observe(getViewLifecycleOwner(), result -> {
-                            if (result != null) {
-                                getRestaurantDetails(result);
-                            }
-                        });
-                return false;
-            });
+                EventBus.getDefault().post(new MapReadyEvent(true));
 
+                MapFragment.this.getLocalRestaurantsData();
+
+                gMap.setOnMarkerClickListener(marker -> {
+                    restaurantViewModel.getRestaurantFromName(marker.getTitle(), localUser.getLocation(), MapFragment.this.requireContext())
+                            .observe(MapFragment.this.getViewLifecycleOwner(), result -> {
+                                if (result != null) {
+                                    MapFragment.this.getRestaurantDetails(result);
+                                    gMap.clear();
+                                }
+                            });
+                    return false;
+                });
+
+            }
         });
     }
 
@@ -145,47 +158,44 @@ public class MapFragment extends Fragment {
                 });
     }
 
+    // Getting the restaurant data and adding markers on location
     private void getLocalRestaurantsData() {
-        BitmapDescriptor iconBasic = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
-        Bitmap bitmap;
-        BitmapDescriptor iconLunchHere = BitmapDescriptorFactory.fromResource(R.drawable.ic_restaurant_marker);
 
-        userViewModel.getAllUsers().observe(getViewLifecycleOwner(), new Observer<List<User>>() {
-            @Override
-            public void onChanged(List<User> users) {
-                if (users != null) {
-                    allUsers.addAll(users);
-                }
+        //Primary color
+        float huePrimary = 19.885714285714283f;
+        //Secondary color
+        float hueSecondary = 150.66666666666666f;
+        BitmapDescriptor iconBasic = BitmapDescriptorFactory.defaultMarker(huePrimary);
+        BitmapDescriptor iconReserved = BitmapDescriptorFactory.defaultMarker(hueSecondary);
+
+        userViewModel.getAllUsers().observe(getViewLifecycleOwner(), users -> {
+            if (users != null) {
+                allUsers.addAll(users);
             }
-        });
 
-        restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), results -> {
-            if (results != null) {
-                for (Result r : results) {
-                    LatLng restaurantLocation = new LatLng(
-                            r.getGeometry().getLocation().getLat(),
-                            r.getGeometry().getLocation().getLng());
+            restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), results -> {
+                if (results != null) {
+                    for (Result r : results) {
+                        LatLng restaurantLocation = new LatLng(
+                                r.getGeometry().getLocation().getLat(),
+                                r.getGeometry().getLocation().getLng());
 
-                    MarkerOptions markerOptions = new MarkerOptions();
+                        MarkerOptions markerOptions = new MarkerOptions();
+                        markerOptions.title(r.getName());
+                        markerOptions.position(restaurantLocation);
+                        markerOptions.icon(iconBasic);
 
-                    for (User u : allUsers) {
-                        if (u.getPlaceBooked() != null && !u.getPlaceBooked().isEmpty()) {
+                        for (User u : allUsers) {
+                            Log.d(TAG, "onChanged: USER : " + u.getUsername() + " /// " + u.getPlaceBooked());
                             if (u.getPlaceBooked().equals(r.getName())) {
-                                markerOptions.icon(iconLunchHere);
-                            } else {
-                                markerOptions.icon(iconBasic);
+                                markerOptions.icon(iconReserved);
                             }
-                        } else {
-                            markerOptions.icon(iconBasic);
+
+                            gMap.addMarker(markerOptions);
                         }
                     }
-
-                    markerOptions.title(r.getName());
-                    markerOptions.position(restaurantLocation);
-
-                    gMap.addMarker(markerOptions);
                 }
-            }
+            });
         });
     }
 
@@ -278,7 +288,7 @@ public class MapFragment extends Fragment {
                         } else {
                             LocationRequest locationRequest = new LocationRequest().setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                                     .setInterval(10000)
-                                    .setFastestInterval(1000)
+                                    .setFastestInterval(5000)
                                     .setNumUpdates(1);
 
                             LocationCallback locationCallback = new LocationCallback() {

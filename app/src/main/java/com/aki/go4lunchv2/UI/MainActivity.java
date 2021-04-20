@@ -19,10 +19,18 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.DialogFragment;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
+import androidx.work.BackoffPolicy;
+import androidx.work.Data;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+import androidx.work.WorkRequest;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.ActivityMainBinding;
@@ -33,8 +41,10 @@ import com.aki.go4lunchv2.events.MapReadyEvent;
 import com.aki.go4lunchv2.events.SettingDialogClosed;
 import com.aki.go4lunchv2.events.YourLunchEvent;
 import com.aki.go4lunchv2.models.Result;
+import com.aki.go4lunchv2.models.ResultDetailed;
 import com.aki.go4lunchv2.models.ResultDetails;
 import com.aki.go4lunchv2.models.User;
+import com.aki.go4lunchv2.notifications.NotificationWorker;
 import com.aki.go4lunchv2.viewmodels.RestaurantViewModel;
 import com.aki.go4lunchv2.viewmodels.UserViewModel;
 import com.bumptech.glide.Glide;
@@ -58,20 +68,29 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+
+import static com.aki.go4lunchv2.UI.MainActivity.Convert.rgbToHsl;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "BONJOUR";
+    private static final String TAG = "BONJOUR ! ";
 
     //TODO : Optimiser map éventuellement
+    //TODO : finir switch réglage (sharedPrefs)
 
     // VAR
     UserViewModel userViewModel;
     RestaurantViewModel restaurantViewModel;
     NavController navController;
     User localUser = User.getInstance();
+    ResultDetailed restaurantDetail;
+    String userListString = "";
     public static boolean notification_state = true;
 
     // CONST
@@ -99,7 +118,6 @@ public class MainActivity extends AppCompatActivity {
                         showSettings();
                         break;
                     case R.id.logout:
-                        //navController.navigate(R.id.loginFragment);
                         Intent intent = new Intent(this, LoginActivity.class);
                         startActivity(intent);
                         userViewModel.logout(this);
@@ -126,9 +144,12 @@ public class MainActivity extends AppCompatActivity {
     public void lunchClick() {
         if (localUser != null) {
             if (localUser.getHasBooked()) {
-                restaurantViewModel.getRestaurantFromName(localUser.getPlaceBooked(), localUser.getLocation(), this.getApplicationContext()).observe(this, result -> {
+                restaurantViewModel.getRestaurantDetail(localUser.getPlaceBooked(), this).observe(this, result -> {
                     if (result != null) {
-                        getDetails(result);
+                        EventBus.getDefault().postSticky(new YourLunchEvent(result));
+                        mainBinding.toolbar.setVisibility(View.GONE);
+                        mainBinding.drawerLayout.closeDrawer(GravityCompat.START);
+                        navController.navigate(R.id.detailFragment);
                     }
                 });
             } else {
@@ -163,6 +184,9 @@ public class MainActivity extends AppCompatActivity {
         navView.setNavigationItemSelectedListener(drawerListener);
 
         setContentView(mainBinding.getRoot());
+
+        getFirebaseFCM();
+        Convert.main();
     }
 
     @Override
@@ -175,12 +199,63 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         EventBus.getDefault().unregister(this);
+        if(localUser.getHasBooked()){
+            setWorkRequest();
+        }
         updateCloud();
+        Log.d(TAG, "onStop: ON STOP EXECUTED");
     }
 
     // Places initialization
     private void places() {
         Places.initialize(getApplicationContext(), getResources().getString(R.string.GOOGLE_MAPS_API_KEY));
+    }
+
+    // WorkRequest (notification)
+    private void setWorkRequest() {
+        Calendar currentDate = Calendar.getInstance();
+        Calendar dueDate = Calendar.getInstance();
+        StringBuilder userStringBuilder = new StringBuilder();
+
+        Log.d(TAG, "setWorkRequest: WORK QUEUED ASKED !");
+
+        userViewModel.getUsersOnPlace(restaurantDetail.getPlaceId()).observe(this, users -> {
+            if(users!=null) {
+                for (User u : users) {
+                    if (u.getPlaceBooked().equals(restaurantDetail.getName())) {
+                        userStringBuilder.append(u.getUsername()).append(", ");
+                    }
+                }
+            }
+        });
+
+        // Set Execution around 12:00:00 AM
+        dueDate.set(Calendar.HOUR_OF_DAY, 12);
+        dueDate.set(Calendar.MINUTE, 0);
+        dueDate.set(Calendar.SECOND, 0);
+        if (dueDate.before(currentDate)) {
+            dueDate.add(Calendar.HOUR_OF_DAY, 24);
+        }
+        long timeDiff = dueDate.getTimeInMillis() - currentDate.getTimeInMillis();
+
+        OneTimeWorkRequest notificationRequest = new OneTimeWorkRequest.Builder(NotificationWorker.class)
+                .setInitialDelay(timeDiff, TimeUnit.MILLISECONDS)
+                .setInputData(new Data.Builder()
+                        .putString("RESTAURANT_NAME", localUser.getPlaceBooked())
+                        .putString("RESTAURANT_ADDRESS", restaurantDetail.getFormattedAddress())
+                        .putString("WORKMATES", userStringBuilder.toString())
+                        .build())
+                .setBackoffCriteria(BackoffPolicy.LINEAR,
+                        OneTimeWorkRequest.MIN_BACKOFF_MILLIS,
+                        TimeUnit.MILLISECONDS)
+                .build();
+
+        WorkManager.getInstance(this).enqueueUniqueWork(
+                "sendNotification",
+                ExistingWorkPolicy.REPLACE,
+                notificationRequest);
+
+        Log.d(TAG, "setWorkRequest: WORK QUEUED SUCCESSFULLY ! " + userStringBuilder.toString());
     }
 
     // Updating cloud data
@@ -206,7 +281,19 @@ public class MainActivity extends AppCompatActivity {
                 localUser.setPlaceLiked(user.getPlaceLiked());
                 localUser.setNotificationPreference(user.getNotificationPreference());
 
+                if(!user.getPlaceBooked().equals("")) {
+                    restaurantViewModel.getRestaurantFromName(user.getPlaceBooked(), user.getLocation(), this).observe(this, new Observer<Result>() {
+                        @Override
+                        public void onChanged(Result result) {
+                            if(result != null)
+                            getDetails(result);
+                        }
+                    });
+                }
+
                 updateUi();
+
+
             }
         });
     }
@@ -260,10 +347,7 @@ public class MainActivity extends AppCompatActivity {
     public void getDetails(Result result) {
         restaurantViewModel.getRestaurantDetail(result.getPlaceId(), getApplicationContext()).observe(MainActivity.this, resultDetails -> {
             if(resultDetails != null) {
-                EventBus.getDefault().postSticky(new YourLunchEvent(resultDetails));
-                mainBinding.toolbar.setVisibility(View.GONE);
-                mainBinding.drawerLayout.closeDrawer(GravityCompat.START);
-                navController.navigate(R.id.detailFragment);
+                restaurantDetail = resultDetails.getResult();
             }
         });
     }
@@ -320,12 +404,12 @@ public class MainActivity extends AppCompatActivity {
             View view = inflater.inflate(R.layout.settings_dialog, null, false);
             SettingsDialogBinding binding = SettingsDialogBinding.bind(view);
 
-            binding.notificationSwitch.setEnabled(notification_state);
+            binding.notificationSwitch.setChecked(notification_state);
 
             builder.setView(view)
                     .setCancelable(true)
                     .setNeutralButton(getString(R.string.confirm_settings), (dialogInterface, i) -> {
-                        notification_state = (binding.notificationSwitch.isEnabled());
+                        notification_state = (binding.notificationSwitch.isChecked());
                         EventBus.getDefault().post(new SettingDialogClosed(notification_state));
                     });
 
@@ -333,20 +417,97 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Forced to use EventBus because I can't call my SharedPrefs in the static
+    // anonymous class for the dialog.
     @Subscribe
     public void onDialogClosed(SettingDialogClosed event){
+        Log.d(TAG, "onDialogClosed: DIALOG CLOSED !! " + notification_state);
         saveData();
     }
 
     public void saveData() {
         SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean(NOTIFICATIONS, notification_state);
+        editor.putBoolean(NOTIFICATIONS, notification_state).apply();
     }
 
     public void loadData() {
         SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
         notification_state = sharedPreferences.getBoolean(NOTIFICATIONS, true);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+    //TO DELETE ! ONLY FOR DEVELOPMENT :
+    public void getFirebaseFCM() {
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(new OnCompleteListener<String>() {
+                    @Override
+                    public void onComplete(@NonNull Task<String> task) {
+                        if (!task.isSuccessful()) {
+                            Log.w(TAG, "Fetching FCM registration token failed", task.getException());
+                            return;
+                        }
+
+                        // Get new FCM registration token
+                        String token = task.getResult();
+
+                        // Log and toast
+                        String msg = token;
+                        Log.d(TAG, msg);
+                        Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    //TO DELETE TOO !
+    public static class Convert {
+
+        public static class Hsl {
+            public double h, s, l;
+
+            public Hsl(double h, double s, double l) {
+                this.h = h;
+                this.s = s;
+                this.l = l;
+            }
+        }
+
+        public static void main() {
+            String color = "#FF8A50"; // A nice shade of green.
+            int r = Integer.parseInt(color.substring(1, 3), 16); // Grab the hex representation of red (chars 1-2) and convert to decimal (base 10).
+            int g = Integer.parseInt(color.substring(3, 5), 16);
+            int b = Integer.parseInt(color.substring(5, 7), 16);
+
+            double hue = rgbToHsl(r, g, b).h * 360;
+
+            System.out.println("The hue value is " + hue);
+        }
+
+        public static Hsl rgbToHsl(double r, double g, double b) {
+            r /= 255d; g /= 255d; b /= 255d;
+
+            double max = Math.max(Math.max(r, g), b), min = Math.min(Math.min(r, g), b);
+            double h, s, l = (max + min) / 2;
+
+            if (max == min) {
+                h = s = 0; // achromatic
+            } else {
+                double d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+                if (max == r) h = (g - b) / d + (g < b ? 6 : 0);
+                else if (max == g) h = (b - r) / d + 2;
+                else h = (r - g) / d + 4; // if (max == b)
+
+                h /= 6;
+            }
+
+            return new Hsl(h, s, l);
+        }
+
+
+
     }
 
 

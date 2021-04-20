@@ -60,6 +60,12 @@ dependencies {
     //PLACES FOR AUTOCOMPLETE
     implementation 'com.google.android.libraries.places:places:2.4.0'
 
+    //GOOGLE MAPS UTILS FOR CLUSTERING
+    implementation 'com.google.maps.android:android-maps-utils:0.5+'
+
+    //WORKMANAGER
+    implementation "androidx.work:work-runtime:2.5.0"
+
     //FIREBASE
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-firestore'
@@ -91,4 +97,10 @@ dependencies {
 
     //TWITTER
     implementation 'com.twitter.sdk.android:twitter-core:3.3.0'
+}
+
+allprojects {
+    configurations.all {
+        resolutionStrategy.force 'org.objenesis:objenesis:2.6'
+    }
 }

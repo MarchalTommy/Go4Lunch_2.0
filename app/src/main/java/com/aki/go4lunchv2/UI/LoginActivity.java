@@ -12,7 +12,6 @@ import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.aki.go4lunchv2.R;
-import com.aki.go4lunchv2.databinding.FragmentLoginBinding;
 import com.aki.go4lunchv2.viewmodels.UserViewModel;
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.ErrorCodes;
@@ -26,16 +25,12 @@ import static android.content.ContentValues.TAG;
 public class LoginActivity extends AppCompatActivity {
 
     private static final int AUTH_REQUEST_CODE = 123;
-    FragmentLoginBinding binding;
     UserViewModel userViewModel;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
-
-        binding = FragmentLoginBinding.inflate(getLayoutInflater());
-
 
         if(userViewModel.getCurrentFirebaseUser() != null) {
             // INTENT TO MAIN ACTIVITY
