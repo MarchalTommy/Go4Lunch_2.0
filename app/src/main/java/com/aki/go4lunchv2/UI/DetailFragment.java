@@ -30,6 +30,7 @@ import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentRestaurantDetailBinding;
 import com.aki.go4lunchv2.events.FromListToDetailEvent;
 import com.aki.go4lunchv2.events.FromMapToDetailEvent;
+import com.aki.go4lunchv2.events.LunchSelectedEvent;
 import com.aki.go4lunchv2.events.YourLunchEvent;
 import com.aki.go4lunchv2.models.ResultDetailed;
 import com.aki.go4lunchv2.models.User;
@@ -56,7 +57,7 @@ public class DetailFragment extends Fragment {
     UserViewModel userViewModel;
     DetailAdapter adapter;
     ResultDetailed restaurantDetail;
-    List<User> userList = new ArrayList<>();
+    ArrayList<User> userList = new ArrayList<>();
     FragmentRestaurantDetailBinding bindings;
 
     User localUser = User.getInstance();
@@ -68,6 +69,7 @@ public class DetailFragment extends Fragment {
         public void onClick(View view) {
             if (!localUser.getHasBooked()) {
                 //Updating data for the UI
+                EventBus.getDefault().post(new LunchSelectedEvent(userList, restaurantDetail.getName(), restaurantDetail.getFormattedAddress()));
                 userViewModel.updateHasBooked(true);
                 userViewModel.updatePlaceBooked(restaurantDetail.getName());
                 updateAdapter();
@@ -262,6 +264,7 @@ public class DetailFragment extends Fragment {
                         .setPositiveButton(getString(R.string.dialog_yes_2), (dialogInterface, i) -> {
 
                             //Updating data for the UI
+                            EventBus.getDefault().post(new LunchSelectedEvent(userList, restaurantDetail.getName(), restaurantDetail.getFormattedAddress()));
                             userViewModel.updatePlaceBooked(restaurantDetail.getName());
                             updateAdapter();
                             DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.secondaryColor));

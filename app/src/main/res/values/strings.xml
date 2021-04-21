@@ -56,8 +56,12 @@
     <string name="notification_title">It\'s time !</string>
     <string name="no_phone">We cannot get this restaurant phone number! Sorry!</string>
     <string name="no_website">This restaurant doesn\'t have any website!</string>
-    <string name="its_time_for_lunch">It\'s time for your lunch at </string>
-    <string name="the_address_is">The address is </string>
-    <string name="youll_be_eating_with">and you\'ll be eating with </string>
-    <string name="only_one">but you\'re the only one eating here!</string>
+    <string name="its_time_for_lunch">It\'s time for your lunch at \ </string>
+    <string name="the_address_is">The address is \ </string>
+    <string name="youll_be_eating_with">and you\'ll be eating with \ </string>
+    <string name="only_one">\ but you\'re the only one eating here!</string>
+    <string name="nobody">nobody, sadly !</string>
+    <string name="the_one">the one and only \ </string>
+    <string name="_and_">" and "</string>
+    <string name="_and_more">" and more !"</string>
 </resources>

@@ -50,4 +50,8 @@
     <string name="the_address_is">L\'adresse est :</string>
     <string name="youll_be_eating_with">"et vous mangerez avec "</string>
     <string name="only_one">mais vous serez le seul à y manger !</string>
+    <string name="nobody">probablement seul, malheureusement !</string>
+    <string name="the_one">" l'incroyable et unique "</string>
+    <string name="_and_">" et "</string>
+    <string name="_and_more">" et d'autres !"</string>
 </resources>

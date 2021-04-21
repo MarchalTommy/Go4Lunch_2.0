@@ -45,30 +45,6 @@ public class NotificationWorker extends Worker {
                     getApplicationContext().getString(R.string.the_address_is) + formattedAddress,
                     getApplicationContext().getString(R.string.youll_be_eating_with) + users);
         }
-
-
-
-/*
-        Calendar currentDate = Calendar.getInstance();
-        Calendar dueDate = Calendar.getInstance();
-
-        //Set execution around 12:00:00 AM
-        dueDate.set(Calendar.HOUR_OF_DAY, 12);
-        dueDate.set(Calendar.MINUTE, 0);
-        dueDate.set(Calendar.SECOND, 0);
-
-        if (dueDate.before(currentDate)) {
-            dueDate.add(Calendar.HOUR_OF_DAY, 24);
-        }
-
-        long timeDiff = dueDate.getTimeInMillis() - currentDate.getTimeInMillis();
-
-        WorkRequest dailyRequest = new OneTimeWorkRequest.Builder(NotificationWorker.class)
-                .setInitialDelay(timeDiff, TimeUnit.MILLISECONDS)
-                .build();
-
-        WorkManager.getInstance(getApplicationContext()).enqueue(dailyRequest);*/
-
         return Result.success();
     }
 
@@ -79,8 +55,7 @@ public class NotificationWorker extends Worker {
 
         // Creating a style for the notification
         NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle();
-        inboxStyle.setBigContentTitle(getApplicationContext().getString(R.string.notification_title));
-        inboxStyle.addLine(messageBody1);
+        inboxStyle.setBigContentTitle(messageBody1);
         inboxStyle.addLine(messageBody2);
         inboxStyle.addLine(messageBody3);
 

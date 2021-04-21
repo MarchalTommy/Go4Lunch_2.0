@@ -8,8 +8,6 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.Navigation;
-import androidx.navigation.fragment.NavHostFragment;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.viewmodels.UserViewModel;
@@ -19,6 +17,7 @@ import com.firebase.ui.auth.IdpResponse;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import static android.content.ContentValues.TAG;
 
@@ -73,7 +72,7 @@ public class LoginActivity extends AppCompatActivity {
         Log.d(TAG, "handleResponseAfterSignIn: SIGN IN AFTER CHECK : LOGIN OR ERROR");
         if (requestCode == AUTH_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                if(response.isNewUser()){
+                if(response != null && response.isNewUser()){
                     userViewModel.createCurrentUserInFirestore();
                 }
                 // INTENT TO MAIN ACTIVITY
@@ -83,7 +82,7 @@ public class LoginActivity extends AppCompatActivity {
             } else {
                 if (response == null) {
                     showSnackBar(getCurrentFocus(), getString(R.string.auth_canceled));
-                } else if (response.getError().getErrorCode() == ErrorCodes.NO_NETWORK) {
+                } else if (Objects.requireNonNull(response.getError()).getErrorCode() == ErrorCodes.NO_NETWORK) {
                     showSnackBar(getCurrentFocus(), getString(R.string.error_no_internet));
                 } else if (response.getError().getErrorCode() == ErrorCodes.UNKNOWN_ERROR) {
                     showSnackBar(getCurrentFocus(), getString(R.string.error_unknown_error));

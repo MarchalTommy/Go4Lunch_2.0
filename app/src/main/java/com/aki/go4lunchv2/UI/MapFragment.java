@@ -5,7 +5,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -22,7 +21,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -50,7 +48,6 @@ import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -61,7 +58,6 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import static android.content.ContentValues.TAG;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
@@ -119,35 +115,40 @@ public class MapFragment extends Fragment {
             public void onMapReady(GoogleMap googleMap) {
                 gMap = googleMap;
 
+                //Setting MapStyle to get a clean and clear map
                 try {
                     boolean success = googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(requireContext(), R.raw.mapstyle));
                 if(!success) {
                     Log.d(TAG, "onMapReady: style parsing failed.");
                 }
-
                 } catch (Resources.NotFoundException e) {
                     Log.e(TAG, "onMapReady: Can't find style. Error :", e);
                 }
 
+                //Telling the Activity that the map is ready
                 EventBus.getDefault().post(new MapReadyEvent(true));
 
-                MapFragment.this.getLocalRestaurantsData();
+                //Getting restaurant data
+                getLocalRestaurantsData();
 
                 gMap.setOnMarkerClickListener(marker -> {
                     restaurantViewModel.getRestaurantFromName(marker.getTitle(), localUser.getLocation(), MapFragment.this.requireContext())
                             .observe(MapFragment.this.getViewLifecycleOwner(), result -> {
                                 if (result != null) {
-                                    MapFragment.this.getRestaurantDetails(result);
-                                    gMap.clear();
+                                    getRestaurantDetails(result);
                                 }
+                                gMap.clear();
                             });
                     return false;
                 });
 
+                //To start the location update listener
+                locationUpdates();
             }
         });
     }
 
+    //API call for PlaceDetail on the restaurant and navigating to the detail fragment
     private void getRestaurantDetails(Result result) {
         restaurantViewModel.getRestaurantDetail(result.getPlaceId(), requireContext())
                 .observe(getViewLifecycleOwner(), resultDetails -> {
@@ -168,11 +169,14 @@ public class MapFragment extends Fragment {
         BitmapDescriptor iconBasic = BitmapDescriptorFactory.defaultMarker(huePrimary);
         BitmapDescriptor iconReserved = BitmapDescriptorFactory.defaultMarker(hueSecondary);
 
+        //Getting all the users
         userViewModel.getAllUsers().observe(getViewLifecycleOwner(), users -> {
             if (users != null) {
                 allUsers.addAll(users);
             }
 
+            //Placing markers on restaurant location.
+            //If user has set his lunch to one, marker's green, otherwise, primary color.
             restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), results -> {
                 if (results != null) {
                     for (Result r : results) {
@@ -186,7 +190,6 @@ public class MapFragment extends Fragment {
                         markerOptions.icon(iconBasic);
 
                         for (User u : allUsers) {
-                            Log.d(TAG, "onChanged: USER : " + u.getUsername() + " /// " + u.getPlaceBooked());
                             if (u.getPlaceBooked().equals(r.getName())) {
                                 markerOptions.icon(iconReserved);
                             }
@@ -199,14 +202,13 @@ public class MapFragment extends Fragment {
         });
     }
 
+    //Updating all the location variables needed throughout the app
     private void locationVariableUpdate(Location location) {
-        locationUpdates();
-        Log.d(TAG, "onComplete: LOCATION FOR DEVELOPPEMENT PURPOSE => " + location.getLatitude() + " : " + location.getLongitude());
         //For the LatLng var
         latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        //To be easily usable for my google places API call
+        //A String to be easily usable for my google places API call
         stringLocation = latLng.latitude + "," + latLng.longitude;
-        //To be accessed from the list view, update on the sharedViewModel
+        //To be accessed from the list view
         localUser.setLocation(stringLocation);
         if (userViewModel.getCurrentFirebaseUser() != null)
             userViewModel.setLocation(latLng);
@@ -238,7 +240,6 @@ public class MapFragment extends Fragment {
                 .title(searchResult.getResult().getName()));
 
         gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(searchLocation, 19));
-
     }
 
     //-----------------------------------------
@@ -252,7 +253,7 @@ public class MapFragment extends Fragment {
     @SuppressLint("MissingPermission")
     private void locationUpdates() {
         gMap.setMyLocationEnabled(true);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 150000, 5, new LocationListener() {
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 150000, 8, new LocationListener() {
             @SuppressLint("MissingPermission")
             @Override
             public void onLocationChanged(@NonNull Location location) {
