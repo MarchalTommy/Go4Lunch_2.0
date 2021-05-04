@@ -59,7 +59,7 @@ public class UserRepository {
     }
 
     public void createUserInFirestore() {
-        if(getCurrentUser().equals(null)){
+        if(getCurrentUser() != null){
 
             String urlPicture = (UserHelper.getCurrentUserFirebase().getPhotoUrl() != null) ? UserHelper.getCurrentUserFirebase().getPhotoUrl().toString() : null;
             String username = UserHelper.getCurrentUserFirebase().getDisplayName();

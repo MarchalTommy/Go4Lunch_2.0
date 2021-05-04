@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.aki.go4lunchv2.models.Result;
+import com.aki.go4lunchv2.models.ResultDetailed;
 import com.aki.go4lunchv2.models.ResultDetails;
 import com.aki.go4lunchv2.repositories.RestaurantRepository;
 
@@ -17,7 +18,9 @@ public class RestaurantViewModel extends ViewModel {
     //REPOSITORY
     private final RestaurantRepository placeRepository;
 
-    private final MutableLiveData<ArrayList<Result>> restaurants = new MutableLiveData<>();
+    //MUTABLE LIVE DATA FOR LOCAL CACHING
+    private final MutableLiveData<ResultDetailed> localCachedDetails = new MutableLiveData<>();
+
 
     public RestaurantViewModel() {
         placeRepository = new RestaurantRepository();
@@ -36,13 +39,11 @@ public class RestaurantViewModel extends ViewModel {
         return placeRepository.getRestaurantFromName(id, location, context);
     }
 
-    public LiveData<ArrayList<Result>> getLocalRestaurantsData() {
-        return restaurants;
-    }
+    public MutableLiveData<ResultDetailed> getLocalCachedDetails() { return localCachedDetails; }
 
-    //SETTING DATA
-    public void setRestaurantsAround(ArrayList<Result> restaurantsAround) {
-        restaurants.setValue(restaurantsAround);
-    }
+    //SETTING LOCAL DATA
 
+    public void setLocalCachedDetails(ResultDetailed details) {
+        localCachedDetails.setValue(details);
+    }
 }

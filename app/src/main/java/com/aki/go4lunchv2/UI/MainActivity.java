@@ -5,7 +5,6 @@ import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,7 +17,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.DialogFragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
@@ -37,9 +35,6 @@ import com.aki.go4lunchv2.events.FromSearchToFragment;
 import com.aki.go4lunchv2.events.LunchSelectedEvent;
 import com.aki.go4lunchv2.events.MapReadyEvent;
 import com.aki.go4lunchv2.events.SettingDialogClosed;
-import com.aki.go4lunchv2.events.YourLunchEvent;
-import com.aki.go4lunchv2.models.Result;
-import com.aki.go4lunchv2.models.ResultDetailed;
 import com.aki.go4lunchv2.models.ResultDetails;
 import com.aki.go4lunchv2.models.User;
 import com.aki.go4lunchv2.notifications.NotificationWorker;
@@ -74,16 +69,14 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MAIN ACTIVITY : ";
 
-    //TODO : Optimiser map éventuellement
-    //TODO : finir switch réglage (sharedPrefs)
-
     // VAR
     UserViewModel userViewModel;
     RestaurantViewModel restaurantViewModel;
     NavController navController;
     User localUser = User.getInstance();
-    ResultDetailed restaurantDetail;
+    ResultDetails restaurantDetail;
     public static boolean notification_state = true;
+    SharedPreferences.Editor editor;
 
     // BINDINGS
     ActivityMainBinding mainBinding;
@@ -132,14 +125,28 @@ public class MainActivity extends AppCompatActivity {
     public void lunchClick() {
         if (localUser != null) {
             if (localUser.getHasBooked()) {
-                restaurantViewModel.getRestaurantDetail(localUser.getPlaceBooked(), this).observe(this, result -> {
-                    if (result != null) {
-                        EventBus.getDefault().postSticky(new YourLunchEvent(result));
-                        mainBinding.toolbar.setVisibility(View.GONE);
-                        mainBinding.drawerLayout.closeDrawer(GravityCompat.START);
-                        navController.navigate(R.id.detailFragment);
-                    }
-                });
+                if (localUser.getPlaceBooked().equals(restaurantViewModel.getLocalCachedDetails().getValue().getName())) {
+                    mainBinding.toolbar.setVisibility(View.GONE);
+                    mainBinding.drawerLayout.closeDrawer(GravityCompat.START);
+                    navController.navigate(R.id.detailFragment);
+                } else {
+                    restaurantViewModel.getRestaurantFromName(localUser.getPlaceBooked(),
+                            localUser.getLocation(), this)
+                            .observe(this, result -> {
+                                if (result != null && restaurantDetail == null)
+                                    restaurantViewModel.getRestaurantDetail(result.getPlaceId(),
+                                            getApplicationContext())
+                                            .observe(MainActivity.this, resultDetails -> {
+                                                if (resultDetails != null) {
+                                                    restaurantDetail = resultDetails;
+                                                    restaurantViewModel.setLocalCachedDetails(restaurantDetail.getResult());
+                                                    mainBinding.toolbar.setVisibility(View.GONE);
+                                                    mainBinding.drawerLayout.closeDrawer(GravityCompat.START);
+                                                    navController.navigate(R.id.detailFragment);
+                                                }
+                                            });
+                            });
+                }
             } else {
                 Snackbar.make(mainBinding.getRoot(), getString(R.string.no_lunch_yet), BaseTransientBottomBar.LENGTH_LONG).show();
             }
@@ -153,12 +160,17 @@ public class MainActivity extends AppCompatActivity {
         restaurantViewModel = new ViewModelProvider(this).get(RestaurantViewModel.class);
         mainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         settingsBinding = SettingsDialogBinding.inflate(getLayoutInflater());
+
+        SharedPreferences sharedPreferences = getSharedPreferences("sharedPrefs", MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+
+        notification_state = sharedPreferences.getBoolean("notification", true);
+
         NavigationSetup();
         places();
 
         // If user is logged in
         if (userViewModel.getCurrentFirebaseUser() != null) {
-            mainBinding.mainProgressBar.show();
             getFromCloud();
         } else {
             // Else, login screen
@@ -199,21 +211,21 @@ public class MainActivity extends AppCompatActivity {
         StringBuilder userStringBuilder = new StringBuilder();
 
         ArrayList<User> userArray = event.userList;
-        for(User u : userArray) {
-            if(u.getUsername().equals(localUser.getUsername())){
+        for (User u : userArray) {
+            if (u.getUsername().equals(localUser.getUsername())) {
                 userArray.remove(u);
             }
         }
 
         switch (userArray.size()) {
-            case 0 :
+            case 0:
                 userStringBuilder.append(getString(R.string.nobody));
                 break;
-            case 1 :
+            case 1:
                 userStringBuilder.append(getString(R.string.the_one)).append(event.userList.get(0).getUsername()).append(" !");
                 break;
             default:
-                if(userArray.size() == 2) {
+                if (userArray.size() == 2) {
                     userStringBuilder.append(userArray.get(0).getUsername()).append(getString(R.string._and_)).append(userArray.get(1).getUsername());
                 } else if (userArray.size() == 3) {
                     userStringBuilder.append(userArray.get(0).getUsername()).append(", ").append(userArray.get(1).getUsername()).append(getString(R.string._and_)).append(userArray.get(2).getUsername());
@@ -244,7 +256,7 @@ public class MainActivity extends AppCompatActivity {
                         TimeUnit.MILLISECONDS)
                 .build();
 
-        if(notification_state){
+        if (notification_state) {
             WorkManager.getInstance(this).enqueueUniqueWork(
                     "sendNotification",
                     ExistingWorkPolicy.REPLACE,
@@ -275,25 +287,7 @@ public class MainActivity extends AppCompatActivity {
                 localUser.setPlaceLiked(user.getPlaceLiked());
                 localUser.setNotificationPreference(user.getNotificationPreference());
 
-                if (!user.getPlaceBooked().equals("")) {
-                    restaurantViewModel.getRestaurantFromName(user.getPlaceBooked(),
-                            user.getLocation(), this)
-                            .observe(this, new Observer<Result>() {
-                                @Override
-                                public void onChanged(Result result) {
-                                    if (result != null)
-                                        restaurantViewModel.getRestaurantDetail(result.getPlaceId(),
-                                                getApplicationContext())
-                                                .observe(MainActivity.this, resultDetails -> {
-                                                    if (resultDetails != null) {
-                                                        restaurantDetail = resultDetails.getResult();
-                                                    }
-                                                });
-                                }
-                            });
-                }
-
-                updateUi();
+                updateUserUi();
             }
         });
     }
@@ -308,12 +302,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Updating the UI with all the information
-    public void updateUi() {
+    public void updateUserUi() {
         Toolbar toolbar = mainBinding.toolbar;
         toolbar.setTitle("I'm Hungry !");
         toolbar.getMenu().getItem(0).setOnMenuItemClickListener(searchListener);
 
-        mainBinding.mainProgressBar.hide();
         mainBinding.bottomNavView.setVisibility(View.VISIBLE);
         toolbar.setVisibility(View.VISIBLE);
 
@@ -327,7 +320,7 @@ public class MainActivity extends AppCompatActivity {
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        if(userViewModel.getCurrentFirebaseUser().getPhotoUrl() != null) {
+        if (userViewModel.getCurrentFirebaseUser().getPhotoUrl() != null) {
             Glide.with(this)
                     .load(userViewModel.getCurrentFirebaseUser().getPhotoUrl())
                     .apply(RequestOptions.circleCropTransform())
@@ -343,32 +336,33 @@ public class MainActivity extends AppCompatActivity {
         headerBinding.usermail.setText(userViewModel.getCurrentFirebaseUser().getEmail());
     }
 
-    // Method to make a Place Detail call when we have a Place object
-    // (only used for autocomplete here)
-    public void getDetails(Place place) {
-        ResultDetails restaurantWithDetail = new ResultDetails();
-        restaurantViewModel.getRestaurantDetail(place.getId(), getApplicationContext()).observe(this, resultDetails -> {
-            if (resultDetails != null) {
-                restaurantWithDetail.setResult(resultDetails.getResult());
-                EventBus.getDefault().post(new FromSearchToFragment(restaurantWithDetail));
-            }
-        });
-    }
-
     // Event called when the map fragment is ready
     @Subscribe
     public void onMapReadyEvent(MapReadyEvent event) {
         if (event.mapReady) {
+
             restaurantViewModel.getRestaurantsAround(localUser.getLocation(), this).observe(this, results -> {
                 if (results != null) {
-                    restaurantViewModel.setRestaurantsAround(results);
-                    mainBinding.mainProgressBar.hide();
+                    //restaurantViewModel.setLocalRestaurantsData(results);
                     mainBinding.bottomNavView.setVisibility(View.VISIBLE);
                     mainBinding.toolbar.setVisibility(View.VISIBLE);
-                    updateUi();
+                    updateUserUi();
+                }
+            });
+
+            userViewModel.getAllUsers().observe(this, users -> {
+                if (users != null) {
+                    userViewModel.setLocalUsersData((ArrayList<User>) users);
                 }
             });
         }
+    }
+
+    // Event to be able to keep the notification switch state in the sharedPrefs
+    @Subscribe
+    public void onSettingsSaved(SettingDialogClosed event) {
+        editor.putBoolean("notification", event.notification_state)
+                .apply();
     }
 
     // Activity Result for Places Autocomplete
@@ -377,7 +371,14 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 100 && resultCode == RESULT_OK && data != null) {
             Place place = Autocomplete.getPlaceFromIntent(data);
-            getDetails(place);
+
+            ResultDetails restaurantWithDetail = new ResultDetails();
+            restaurantViewModel.getRestaurantDetail(place.getId(), getApplicationContext()).observe(this, resultDetails -> {
+                if (resultDetails != null) {
+                    restaurantWithDetail.setResult(resultDetails.getResult());
+                    EventBus.getDefault().post(new FromSearchToFragment(restaurantWithDetail));
+                }
+            });
         }
     }
 
@@ -405,10 +406,13 @@ public class MainActivity extends AppCompatActivity {
                     .setCancelable(true)
                     .setNeutralButton(getString(R.string.confirm_settings), (dialogInterface, i) -> {
                         notification_state = (binding.notificationSwitch.isChecked());
-                        EventBus.getDefault().post(new SettingDialogClosed(notification_state));
+                        EventBus.getDefault().post(new SettingDialogClosed(binding.notificationSwitch.isChecked()));
                     });
 
             return builder.create();
         }
     }
+
+
+
 }

@@ -74,6 +74,7 @@ public class LoginActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 if(response != null && response.isNewUser()){
                     userViewModel.createCurrentUserInFirestore();
+                    Log.d(TAG, "handleResponseAfterSignIn: NEW USER CREATED");
                 }
                 // INTENT TO MAIN ACTIVITY
                 Intent intent = new Intent(this, MainActivity.class);

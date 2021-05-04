@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -15,14 +16,17 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentWorkmatesBinding;
-import com.aki.go4lunchv2.events.FromListToDetailEvent;
 import com.aki.go4lunchv2.events.FromWorkmatesListToFragment;
 import com.aki.go4lunchv2.models.User;
 import com.aki.go4lunchv2.viewmodels.RestaurantViewModel;
 import com.aki.go4lunchv2.viewmodels.UserViewModel;
+import com.google.android.material.snackbar.BaseTransientBottomBar;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
+
+import java.util.List;
 
 public class WorkmatesFragment extends Fragment {
 
@@ -83,17 +87,22 @@ public class WorkmatesFragment extends Fragment {
     public void fromList(FromWorkmatesListToFragment event) {
         workmateClicked = event.user;
 
-        restaurantViewModel.getRestaurantFromName(workmateClicked.getPlaceBooked(), localUser.getLocation(), requireContext())
-                .observe(getViewLifecycleOwner(), result -> {
-                    if (result != null) {
-                        restaurantViewModel.getRestaurantDetail(result.getPlaceId(), getContext())
-                                .observe(getViewLifecycleOwner(), resultDetails -> {
-                                    if (resultDetails != null) {
-                                        EventBus.getDefault().postSticky(new FromListToDetailEvent(resultDetails.getResult()));
-                                        navController.navigate(R.id.action_workmatesFragment_to_detailFragment);
-                                    }
-                                });
-                    }
-                });
+        if(workmateClicked.getPlaceBooked() == null | workmateClicked.getPlaceBooked().isEmpty()) {
+            Snackbar.make(requireView(), R.string.user_no_lunch, BaseTransientBottomBar.LENGTH_LONG).show();
+        } else {
+            restaurantViewModel.getRestaurantFromName(workmateClicked.getPlaceBooked(), localUser.getLocation(), requireContext())
+                    .observe(getViewLifecycleOwner(), result -> {
+                        if (result != null) {
+                            restaurantViewModel.getRestaurantDetail(result.getPlaceId(), getContext())
+                                    .observe(getViewLifecycleOwner(), resultDetails -> {
+                                        if (resultDetails != null) {
+                                            restaurantViewModel.setLocalCachedDetails(resultDetails.getResult());
+                                            navController.navigate(R.id.detailFragment);
+                                        }
+                                    });
+                        }
+                    });
+        }
+
     }
 }

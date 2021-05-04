@@ -3,7 +3,9 @@ package com.aki.go4lunchv2.models;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class Close {
+import java.io.Serializable;
+
+public class Close implements Serializable {
 
     @SerializedName("day")
     @Expose

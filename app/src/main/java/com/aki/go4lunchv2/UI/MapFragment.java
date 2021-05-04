@@ -27,7 +27,6 @@ import androidx.navigation.Navigation;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentMapBinding;
-import com.aki.go4lunchv2.events.FromMapToDetailEvent;
 import com.aki.go4lunchv2.events.FromSearchToFragment;
 import com.aki.go4lunchv2.events.MapReadyEvent;
 import com.aki.go4lunchv2.models.Result;
@@ -66,6 +65,7 @@ public class MapFragment extends Fragment {
 
     RestaurantViewModel restaurantViewModel;
     UserViewModel userViewModel;
+
     ArrayList<User> allUsers = new ArrayList<>();
     User localUser = User.getInstance();
 
@@ -84,6 +84,9 @@ public class MapFragment extends Fragment {
         super.onCreate(savedInstanceState);
         restaurantViewModel = new ViewModelProvider(requireActivity()).get(RestaurantViewModel.class);
         userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
+
+        //INIT LOCATION MANAGER
+        locationManager = (LocationManager) requireActivity().getSystemService(Context.LOCATION_SERVICE);
     }
 
     @Nullable
@@ -125,38 +128,32 @@ public class MapFragment extends Fragment {
                     Log.e(TAG, "onMapReady: Can't find style. Error :", e);
                 }
 
-                //Telling the Activity that the map is ready
+                //Telling the Activity that the map is ready for the api call and UI Update (only if no local data can be found)
                 EventBus.getDefault().post(new MapReadyEvent(true));
 
                 //Getting restaurant data
                 getLocalRestaurantsData();
 
                 gMap.setOnMarkerClickListener(marker -> {
-                    restaurantViewModel.getRestaurantFromName(marker.getTitle(), localUser.getLocation(), MapFragment.this.requireContext())
-                            .observe(MapFragment.this.getViewLifecycleOwner(), result -> {
-                                if (result != null) {
-                                    getRestaurantDetails(result);
+                    restaurantViewModel.getRestaurantDetail(marker.getSnippet(), requireContext())
+                            .observe(getViewLifecycleOwner(), resultDetails -> {
+                                if (resultDetails != null) {
+                                    restaurantViewModel.setLocalCachedDetails(resultDetails.getResult());
+                                    navController.navigate(R.id.detailFragment);
                                 }
-                                gMap.clear();
                             });
                     return false;
                 });
 
-                //To start the location update listener
-                locationUpdates();
+                // If permissions are granted, activate the blue marker for the user position
+                if(ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PERMISSION_GRANTED
+                        && ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PERMISSION_GRANTED) {
+                    gMap.setMyLocationEnabled(true);
+                }
+
+
             }
         });
-    }
-
-    //API call for PlaceDetail on the restaurant and navigating to the detail fragment
-    private void getRestaurantDetails(Result result) {
-        restaurantViewModel.getRestaurantDetail(result.getPlaceId(), requireContext())
-                .observe(getViewLifecycleOwner(), resultDetails -> {
-                    if (resultDetails != null) {
-                        EventBus.getDefault().postSticky(new FromMapToDetailEvent(resultDetails.getResult()));
-                        navController.navigate(R.id.detailFragment);
-                    }
-                });
     }
 
     // Getting the restaurant data and adding markers on location
@@ -170,14 +167,14 @@ public class MapFragment extends Fragment {
         BitmapDescriptor iconReserved = BitmapDescriptorFactory.defaultMarker(hueSecondary);
 
         //Getting all the users
-        userViewModel.getAllUsers().observe(getViewLifecycleOwner(), users -> {
+        userViewModel.getUsers().observe(getViewLifecycleOwner(), users -> {
             if (users != null) {
                 allUsers.addAll(users);
             }
 
             //Placing markers on restaurant location.
             //If user has set his lunch to one, marker's green, otherwise, primary color.
-            restaurantViewModel.getLocalRestaurantsData().observe(getViewLifecycleOwner(), results -> {
+            restaurantViewModel.getRestaurantsAround(localUser.getLocation(), requireContext()).observe(getViewLifecycleOwner(), results -> {
                 if (results != null) {
                     for (Result r : results) {
                         LatLng restaurantLocation = new LatLng(
@@ -186,6 +183,7 @@ public class MapFragment extends Fragment {
 
                         MarkerOptions markerOptions = new MarkerOptions();
                         markerOptions.title(r.getName());
+                        markerOptions.snippet(r.getPlaceId());
                         markerOptions.position(restaurantLocation);
                         markerOptions.icon(iconBasic);
 
@@ -235,9 +233,15 @@ public class MapFragment extends Fragment {
 
         LatLng searchLocation = new LatLng(searchResult.getResult().getGeometry().getLocation().getLat(), searchResult.getResult().getGeometry().getLocation().getLng());
 
+        //Primary color
+        float huePrimary = 19.885714285714283f;
+        BitmapDescriptor iconBasic = BitmapDescriptorFactory.defaultMarker(huePrimary);
+
         gMap.addMarker(new MarkerOptions()
                 .position(searchLocation)
-                .title(searchResult.getResult().getName()));
+                .icon(iconBasic)
+                .title(searchResult.getResult().getName())
+                .snippet(searchResult.getResult().getPlaceId()));
 
         gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(searchLocation, 19));
     }
@@ -252,7 +256,6 @@ public class MapFragment extends Fragment {
      */
     @SuppressLint("MissingPermission")
     private void locationUpdates() {
-        gMap.setMyLocationEnabled(true);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 150000, 8, new LocationListener() {
             @SuppressLint("MissingPermission")
             @Override
@@ -272,9 +275,10 @@ public class MapFragment extends Fragment {
             }
         } else {
             Log.d(TAG, "getPermissions: PERMISSIONS ALREADY GRANTED ");
-            //INIT LOCATION MANAGER
-            locationManager = (LocationManager) requireActivity().getSystemService(Context.LOCATION_SERVICE);
             if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+
+                //To start the location update listener
+                locationUpdates();
                 //When location service is enabled, get last location
                 client.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
                     /**
@@ -355,6 +359,8 @@ public class MapFragment extends Fragment {
                             locationVariableUpdate(location);
                         }
                     });
+                    //To start the location update listener
+                    locationUpdates();
                 }
             } else if (!shouldShowRequestPermissionRationale(permissions[0]) && !shouldShowRequestPermissionRationale(permissions[1])) {
                 displayOptions();

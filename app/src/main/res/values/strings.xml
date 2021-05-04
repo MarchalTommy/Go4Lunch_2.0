@@ -62,6 +62,7 @@
     <string name="only_one">\ but you\'re the only one eating here!</string>
     <string name="nobody">nobody, sadly !</string>
     <string name="the_one">the one and only \ </string>
-    <string name="_and_">" and "</string>
-    <string name="_and_more">" and more !"</string>
+    <string name="_and_"> and </string>
+    <string name="_and_more"> and more !</string>
+    <string name="user_no_lunch">This user doesn\'t have any lunch selected !</string>
 </resources>

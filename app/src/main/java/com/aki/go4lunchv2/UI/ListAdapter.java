@@ -3,9 +3,7 @@ package com.aki.go4lunchv2.UI;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
-import android.icu.util.GregorianCalendar;
 import android.location.Location;
-import android.text.format.Time;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,7 +14,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.RestaurantsRecyclerviewItemBinding;
 import com.aki.go4lunchv2.events.FromAdapterToFragment;
-import com.aki.go4lunchv2.events.FromListToDetailEvent;
 import com.aki.go4lunchv2.models.Result;
 import com.aki.go4lunchv2.models.User;
 import com.bumptech.glide.Glide;
@@ -25,7 +22,6 @@ import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.List;
 
 public class ListAdapter extends RecyclerView.Adapter<ListAdapter.RestaurantViewHolder> {

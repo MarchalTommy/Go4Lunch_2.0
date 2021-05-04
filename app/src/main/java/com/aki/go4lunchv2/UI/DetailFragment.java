@@ -7,10 +7,8 @@ import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -19,7 +17,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
@@ -28,12 +25,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.aki.go4lunchv2.R;
 import com.aki.go4lunchv2.databinding.FragmentRestaurantDetailBinding;
-import com.aki.go4lunchv2.events.FromListToDetailEvent;
-import com.aki.go4lunchv2.events.FromMapToDetailEvent;
 import com.aki.go4lunchv2.events.LunchSelectedEvent;
-import com.aki.go4lunchv2.events.YourLunchEvent;
 import com.aki.go4lunchv2.models.ResultDetailed;
 import com.aki.go4lunchv2.models.User;
+import com.aki.go4lunchv2.viewmodels.RestaurantViewModel;
 import com.aki.go4lunchv2.viewmodels.UserViewModel;
 import com.bumptech.glide.Glide;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -41,19 +36,16 @@ import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
-import static android.content.ContentValues.TAG;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 public class DetailFragment extends Fragment {
 
     Context context;
+    RestaurantViewModel restaurantViewModel;
     UserViewModel userViewModel;
     DetailAdapter adapter;
     ResultDetailed restaurantDetail;
@@ -125,24 +117,31 @@ public class DetailFragment extends Fragment {
         }
     };
 
+    public void getRestaurantDetail() {
+        restaurantViewModel.getLocalCachedDetails().observe(getViewLifecycleOwner(), resultDetailed -> {
+            if(resultDetailed != null)
+                restaurantDetail = resultDetailed;
+                updateRestaurantUI(restaurantDetail);
+        });
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         context = this.getContext();
         userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
+        restaurantViewModel = new ViewModelProvider(requireActivity()).get(RestaurantViewModel.class);
     }
 
     @Override
     public void onStart() {
         super.onStart();
         restaurantDetail = new ResultDetailed();
-        EventBus.getDefault().register(this);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        EventBus.getDefault().unregister(this);
     }
 
     // I made it this way to prevent the app from updating each time the FAB is clicked.
@@ -160,13 +159,13 @@ public class DetailFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_restaurant_detail, container, false);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         bindings = FragmentRestaurantDetailBinding.bind(view);
 
         //Getting data and updating the UI
+        getRestaurantDetail();
         getDataFromViewModel();
 
         initAdapter();
@@ -177,7 +176,6 @@ public class DetailFragment extends Fragment {
         bindings.callBtn.setOnClickListener(callLikeWebsiteListener);
         bindings.likeBtn.setOnClickListener(callLikeWebsiteListener);
         bindings.websiteBtn.setOnClickListener(callLikeWebsiteListener);
-
     }
 
     //Initiating the workmates eating here adapter
@@ -209,35 +207,36 @@ public class DetailFragment extends Fragment {
     private void getDataFromViewModel() {
         //Getting current user
         userViewModel.getCurrentUser().observe(getViewLifecycleOwner(), user -> {
+            if (user != null) {
+                //Putting the info in local var localUser when data is received
+                localUser.setUrlPicture(user.getUrlPicture());
+                localUser.setUsername(user.getUsername());
+                localUser.setHasBooked(user.getHasBooked());
+                localUser.setPlaceBooked(user.getPlaceBooked());
+                localUser.setUid(user.getUid());
 
-            //Putting the info in local var currentUser when data is received
-            localUser.setUrlPicture(user.getUrlPicture());
-            localUser.setUsername(user.getUsername());
-            localUser.setHasBooked(user.getHasBooked());
-            localUser.setPlaceBooked(user.getPlaceBooked());
-            localUser.setUid(user.getUid());
-
-            //FAB design (green when lunch is here, black otherwise)
-            if (localUser.getPlaceBooked().equals(restaurantDetail.getName())) {
-                DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.secondaryColor));
-            } else {
-                DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.black));
-            }
-
-            //Like button design (green when place is liked, orange otherwise)
-            if(localUser.getPlaceLiked().contains(restaurantDetail.getPlaceId())){
-                bindings.likeBtn.setText(R.string.liked);
-                bindings.likeBtn.setTextColor(getResources().getColor(R.color.secondaryDarkColor));
-                Drawable[] drawables = bindings.likeBtn.getCompoundDrawables();
-                if (drawables[1] != null) {  // top drawable is 1
-                    drawables[1].setColorFilter(getResources().getColor(R.color.secondaryDarkColor), PorterDuff.Mode.MULTIPLY);
+                //FAB design (green when lunch is here, black otherwise)
+                if (localUser.getPlaceBooked().equals(restaurantDetail.getName())) {
+                    DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.secondaryColor));
+                } else {
+                    DrawableCompat.setTint(bindings.detailFab.getDrawable(), getResources().getColor(R.color.black));
                 }
-            } else {
-                bindings.likeBtn.setText(R.string.not_liked);
-                bindings.likeBtn.setTextColor(getResources().getColor(R.color.primaryColor));
-                Drawable[] drawables = bindings.likeBtn.getCompoundDrawables();
-                if (drawables[1] != null) {  // top drawable is 1
-                    drawables[1].setColorFilter(getResources().getColor(R.color.primaryColor), PorterDuff.Mode.MULTIPLY);
+
+                //Like button design (green when place is liked, orange otherwise)
+                if(localUser.getPlaceLiked().contains(restaurantDetail.getPlaceId())){
+                    bindings.likeBtn.setText(R.string.liked);
+                    bindings.likeBtn.setTextColor(getResources().getColor(R.color.secondaryDarkColor));
+                    Drawable[] drawables = bindings.likeBtn.getCompoundDrawables();
+                    if (drawables[1] != null) {  // top drawable is 1
+                        drawables[1].setColorFilter(getResources().getColor(R.color.secondaryDarkColor), PorterDuff.Mode.MULTIPLY);
+                    }
+                } else {
+                    bindings.likeBtn.setText(R.string.not_liked);
+                    bindings.likeBtn.setTextColor(getResources().getColor(R.color.primaryColor));
+                    Drawable[] drawables = bindings.likeBtn.getCompoundDrawables();
+                    if (drawables[1] != null) {  // top drawable is 1
+                        drawables[1].setColorFilter(getResources().getColor(R.color.primaryColor), PorterDuff.Mode.MULTIPLY);
+                    }
                 }
             }
         });
@@ -318,39 +317,6 @@ public class DetailFragment extends Fragment {
                     .centerCrop()
                     .into(bindings.restaurantDetailPic);
         }
-    }
-
-    // Event from the menu (Your Lunch button)
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    public void fromMenu(YourLunchEvent event){
-        //Initializing the restaurant to be able to receive the data
-        restaurantDetail = event.result;
-
-        updateRestaurantUI(restaurantDetail);
-
-        EventBus.getDefault().removeStickyEvent(this);
-    }
-
-    // Event from the list
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    public void fromList(FromListToDetailEvent event) {
-        //Initializing the restaurant to be able to receive the data
-        Log.d(TAG, "fromList: EVENT SUCCESSFUL" + restaurantDetail.getName());
-        restaurantDetail = event.result;
-
-        updateRestaurantUI(restaurantDetail);
-
-        EventBus.getDefault().removeStickyEvent(this);
-    }
-
-    // Event from the map
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    public void fromMap(FromMapToDetailEvent event) {
-        restaurantDetail = event.result;
-
-        updateRestaurantUI(restaurantDetail);
-
-        EventBus.getDefault().removeStickyEvent(this);
     }
 
     //------------------------------

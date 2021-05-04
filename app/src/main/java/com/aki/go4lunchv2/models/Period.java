@@ -3,7 +3,9 @@ package com.aki.go4lunchv2.models;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class Period {
+import java.io.Serializable;
+
+public class Period implements Serializable {
 
     @SerializedName("close")
     @Expose

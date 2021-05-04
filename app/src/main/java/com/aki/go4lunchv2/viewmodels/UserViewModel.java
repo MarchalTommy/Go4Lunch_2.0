@@ -19,11 +19,16 @@ public class UserViewModel extends ViewModel {
     //REPOSITORY
     private final UserRepository userRepository = new UserRepository();
 
+    private final MutableLiveData<ArrayList<User>> localUsersData = new MutableLiveData<>();
     private final MutableLiveData<User> user = new MutableLiveData<>();
 
     //GETTING DATA
     public LiveData<User> getCurrentUser() {
         return userRepository.getCurrentUser();
+    }
+
+    public MutableLiveData<ArrayList<User>> getUsers() {
+        return localUsersData;
     }
 
     public FirebaseUser getCurrentFirebaseUser() {
@@ -39,6 +44,10 @@ public class UserViewModel extends ViewModel {
     }
 
     //UPDATE DATA
+    public void setLocalUsersData(ArrayList<User> usersData) {
+        localUsersData.setValue(usersData);
+    }
+
     public void setLocation(LatLng location){
         userRepository.setLocation(location);
     }
@@ -74,4 +83,13 @@ public class UserViewModel extends ViewModel {
     public void updateNotificationPreference(Boolean pref) {
         userRepository.updateNotificationPreference(pref);
     }
+
+
+
+    //GETTERS
+
+
+
+    //SETTERS
+
 }

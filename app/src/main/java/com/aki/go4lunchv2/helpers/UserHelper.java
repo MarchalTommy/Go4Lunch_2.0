@@ -30,7 +30,7 @@ public class UserHelper {
     }
 
     public static DocumentReference getCurrentUser() {
-        return FirebaseFirestore.getInstance().collection(COLLECTION_NAME).document(FirebaseAuth.getInstance().getCurrentUser().getUid());
+        return getUserCollection().document(FirebaseAuth.getInstance().getCurrentUser().getUid());
     }
 
     public static FirebaseUser getCurrentUserFirebase() {
@@ -39,6 +39,7 @@ public class UserHelper {
 
     public static Task<Void> createUser(String uid, String username, String urlPicture, Boolean hasBooked, String placeBooked, String location) {
         User userToCreate = new User(uid, username, urlPicture, hasBooked, placeBooked, location);
+
         return UserHelper.getUserCollection()
                 .document(uid)
                 .set(userToCreate);

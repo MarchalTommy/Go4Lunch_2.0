@@ -54,4 +54,5 @@
     <string name="the_one">" l'incroyable et unique "</string>
     <string name="_and_">" et "</string>
     <string name="_and_more">" et d'autres !"</string>
+    <string name="user_no_lunch">Cet utilisateur n\'a pas choisit de restaurant !</string>
 </resources>
